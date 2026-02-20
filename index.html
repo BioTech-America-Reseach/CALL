@@ -17,20 +17,27 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <style>
-        :root { --gold: #D4AF37; --bg: #050505; }
+        :root { --gold: #D4AF37; --bg: #0a0a0a; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-        body { background: var(--bg); color: white; height: 100vh; overflow: hidden; position: fixed; width: 100%; }
+        
+        body, html { 
+            background: var(--bg); 
+            color: white; 
+            height: 100%; 
+            width: 100%; 
+            overflow: hidden;
+        }
 
         /* INSTALL BUTTON */
-        #install-banner {
-            display: none; background: var(--gold); color: black; padding: 10px;
-            text-align: center; font-weight: bold; font-size: 0.8rem; cursor: pointer;
-            position: fixed; top: 0; width: 100%; z-index: 9999;
+        #install-btn {
+            display: none; background: var(--gold); color: black; padding: 12px;
+            text-align: center; font-weight: bold; width: 100%; cursor: pointer;
+            border-bottom: 2px solid #000;
         }
 
         /* LOGIN */
         #login-screen {
-            position: fixed; width: 100%; height: 100%; background: #000;
+            position: fixed; inset: 0; background: #000;
             display: flex; justify-content: center; align-items: center; z-index: 5000;
         }
         .login-box {
@@ -42,66 +49,129 @@
             border: 1px solid #333; background: #222; color: white; text-align: center; font-size: 16px;
         }
 
-        /* INTERFACE */
-        #main-interface { display: none; height: 100vh; flex-direction: column; }
-        .chat-header { padding: 15px; background: #111; border-bottom: 1px solid var(--gold); display: flex; justify-content: space-between; }
+        /* MAIN INTERFACE */
+        #main-interface { 
+            display: none; 
+            flex-direction: column; 
+            height: 100vh; /* Full height */
+        }
+
+        .chat-header { 
+            padding: 15px; background: #111; 
+            border-bottom: 1px solid var(--gold); 
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        /* CHAT SECTION */
+        #chat-interface { 
+            display: none; 
+            flex: 1; 
+            flex-direction: column; 
+            overflow: hidden; 
+            position: relative;
+        }
 
         .chat-messages { 
-            flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
-            padding-bottom: 200px; /* Nafasi kubwa chini */
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 15px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px;
+            background: #050505;
         }
-        .message { padding: 12px; border-radius: 12px; max-width: 80%; font-size: 0.9rem; }
-        .msg-me { background: var(--gold); color: black; align-self: flex-end; }
-        .msg-other { background: #222; color: white; align-self: flex-start; }
 
-        /* FLOATING INPUT (IMEPANDISHWA JUU) */
-        .input-container {
-            position: fixed; 
-            bottom: 120px; /* IMEPANDISHWA JUU ZAIDI HAPA */
-            left: 5%; width: 90%;
-            background: #1a1a1a; padding: 10px; border-radius: 30px;
-            display: flex; align-items: center; border: 1px solid var(--gold);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.5); z-index: 1000;
+        .message { padding: 12px 16px; border-radius: 15px; max-width: 80%; font-size: 0.95rem; line-height: 1.4; }
+        .msg-me { background: var(--gold); color: black; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .msg-other { background: #222; color: white; align-self: flex-start; border-bottom-left-radius: 2px; }
+
+        /* UREKEBISHO WA TYPING AREA - IMEPANDISHWA JUU */
+        .typing-area {
+            background: #111;
+            padding: 15px 15px calc(15px + env(safe-area-inset-bottom));
+            border-top: 1px solid #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
         }
-        .input-container input {
-            flex: 1; background: transparent; border: none; color: white; padding: 10px; outline: none; font-size: 16px;
+
+        .input-wrapper {
+            flex: 1;
+            background: #222;
+            border-radius: 25px;
+            padding: 5px 15px;
+            border: 1px solid var(--gold);
+            display: flex;
+            align-items: center;
         }
-        .btn-send { background: var(--gold); border: none; width: 40px; height: 40px; border-radius: 50%; color: black; cursor: pointer; }
+
+        .input-wrapper input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 10px 0;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .btn-send {
+            background: var(--gold);
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            color: black;
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
+        }
 
         #doctor-dashboard { display: none; flex: 1; overflow-y: auto; padding: 15px; }
-        .patient-card { background: #111; padding: 15px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #333; display: flex; justify-content: space-between; }
+        .patient-card { 
+            background: #111; padding: 20px; border-radius: 15px; 
+            margin-bottom: 12px; border-left: 5px solid var(--gold); 
+            display: flex; justify-content: space-between; align-items: center;
+        }
     </style>
 </head>
 <body>
 
-    <div id="install-banner" onclick="installApp()">📲 BONYEZA HAPA KUSAKINISHA APP KWENYE SIMU YAKO</div>
+    <div id="install-btn" onclick="installApp()">📲 SAKINISHA APP KWENYE HOME SCREEN</div>
     <audio id="notifSound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"></audio>
 
     <div id="login-screen">
         <div class="login-box">
-            <h2 style="color:var(--gold)">DR. WILLIAM</h2>
+            <h2 style="color:var(--gold); margin-bottom: 20px;">DR. WILLIAM</h2>
             <input type="text" id="name-input" placeholder="Jina Lako">
-            <input type="password" id="doctor-code" placeholder="Code ya Daktari" style="display: none;">
-            <p onclick="enableDoctorMode()" style="font-size: 0.7rem; color: var(--gold); margin: 15px; cursor: pointer;">Wewe ni Daktari?</p>
-            <button onclick="startApp()" style="background:var(--gold); width:100%; padding:15px; border-radius:10px; border:none; font-weight:bold;">INGIA</button>
+            <input type="password" id="doctor-code" placeholder="PIN ya Daktari" style="display: none;">
+            <p onclick="enableDoctorMode()" style="font-size: 0.75rem; color: var(--gold); margin: 20px; cursor: pointer;">Ingia kama Daktari</p>
+            <button onclick="startApp()" style="background:var(--gold); width:100%; padding:16px; border-radius:12px; border:none; font-weight:bold; cursor:pointer;">INGIA CLINIC</button>
         </div>
     </div>
 
     <div id="main-interface">
         <div class="chat-header">
-            <span id="chat-title" style="color:var(--gold); font-weight:bold;">Clinic Chat</span>
-            <button id="back-btn" onclick="showDashboard()" style="display:none; background:none; color:white; border:1px solid var(--gold); padding:5px; border-radius:5px;">Rudi</button>
+            <span id="chat-title" style="color:var(--gold); font-weight:bold;">Clinic Hub</span>
+            <button id="back-btn" onclick="showDashboard()" style="display:none; background:none; color:white; border:1px solid var(--gold); padding:6px 15px; border-radius:20px; font-size: 0.8rem;">Rudi</button>
         </div>
 
         <div id="doctor-dashboard">
-            <h4 style="margin-bottom:10px; font-size:0.8rem;">WAGONJWA ONLINE:</h4>
+            <h4 style="margin-bottom:15px; font-size:0.8rem; color: #888;">WAGONJWA WANAOSUBIRI:</h4>
             <div id="patient-list"></div>
         </div>
 
-        <div id="chat-interface" style="display:none; flex:1; flex-direction:column;">
+        <div id="chat-interface">
             <div class="chat-messages" id="chat-flow"></div>
-            <div class="input-container">
-                <input type="text" id="msg-input" placeholder="Andika ujumbe...">
+            
+            <div class="typing-area">
+                <div class="input-wrapper">
+                    <input type="text" id="msg-input" placeholder="Andika ujumbe hapa...">
+                </div>
                 <button class="btn-send" onclick="sendMsg()"><i class="fas fa-paper-plane"></i></button>
             </div>
         </div>
@@ -115,23 +185,21 @@
         let myName = ""; let isDoctor = false; let activeRoomId = "";
         let deferredPrompt;
 
-        // --- INSTALL LOGIC ---
+        // PWA INSTALL LOGIC
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            document.getElementById('install-banner').style.display = 'block';
+            document.getElementById('install-btn').style.display = 'block';
         });
 
         async function installApp() {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') document.getElementById('install-banner').style.display = 'none';
                 deferredPrompt = null;
+                document.getElementById('install-btn').style.display = 'none';
             }
         }
 
-        // --- APP LOGIC ---
         function enableDoctorMode() { document.getElementById('doctor-code').style.display = 'block'; }
 
         function startApp() {
@@ -154,13 +222,17 @@
             document.getElementById('doctor-dashboard').style.display = 'block';
             document.getElementById('chat-interface').style.display = 'none';
             document.getElementById('back-btn').style.display = 'none';
+            document.getElementById('chat-title').innerText = "Dashboard ya Daktari";
             
             db.ref('online_patients').on('value', (snap) => {
                 const list = document.getElementById('patient-list');
                 list.innerHTML = "";
                 snap.forEach((child) => {
-                    list.innerHTML += `<div class="patient-card" onclick="openChat('${child.key}', '${child.val().name}')">
-                        <span>${child.val().name}</span><i class="fas fa-comment"></i></div>`;
+                    list.innerHTML += `
+                    <div class="patient-card" onclick="openChat('${child.key}', '${child.val().name}')">
+                        <span><b>${child.val().name}</b></span>
+                        <i class="fas fa-chevron-right" style="color:var(--gold)"></i>
+                    </div>`;
                 });
             });
         }
@@ -170,7 +242,7 @@
             document.getElementById('doctor-dashboard').style.display = 'none';
             document.getElementById('chat-interface').style.display = 'flex';
             document.getElementById('chat-title').innerText = title;
-            if(isDoctor) document.getElementById('back-btn').style.display = 'inline';
+            if(isDoctor) document.getElementById('back-btn').style.display = 'inline-block';
 
             db.ref('messages/' + roomId).off();
             db.ref('messages/' + roomId).on('child_added', (snap) => {
@@ -197,6 +269,7 @@
                 text: input.value.trim()
             });
             input.value = "";
+            input.focus();
         }
     </script>
 </body>
