@@ -2,1030 +2,248 @@
 <html lang="sw">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dr. William · Telemedicine v7</title>
-    
-    <!-- Fonts & Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Firebase SDK (modular approach for better tree-shaking) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dr. William Clinic</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
-
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        }
-
-        :root {
-            --gold: #D4AF37;
-            --gold-light: #f5e3b3;
-            --bg: #0a0a0a;
-            --surface: #1a1a1a;
-            --surface-light: #2a2a2a;
-            --red: #ff4757;
-            --green: #2ed573;
-            --blue: #3498db;
-        }
-
-        body, html {
-            background: #000;
-            color: #fff;
-            height: 100vh;
-            width: 100vw;
-            overflow: hidden;
-            position: fixed;
-        }
-
-        /* Background */
+        :root { --gold: #D4AF37; --bg: #050505; --green: #2ed573; --red: #ff4757; }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins',sans-serif; }
+        body,html { background:#000; color:white; height:100vh; width:100vw; overflow:hidden; position:fixed; }
+        
+        /* BACKGROUND YA NDEGE MWEUSI */
         .app-bg {
-            position: fixed;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(20,20,20,0.9) 100%),
-                        url('https://images.unsplash.com/photo-1551467003-83296837905d?q=80&w=2070&auto=format&fit=crop') center/cover;
-            z-index: -1;
+            position:fixed; inset:0; z-index:-1;
+            background: linear-gradient(rgba(0,0,0,0.88), rgba(0,0,0,0.95)),
+                        url('https://images.unsplash.com/photo-1551467003-83296837905d?q=80&w=2070&auto=format&fit=crop') center/cover no-repeat;
         }
 
-        /* Camera preview (only shown to patient) */
-        #camera-preview-container {
-            position: fixed;
-            bottom: 100px;
-            right: 16px;
-            width: 120px;
-            height: 160px;
-            border: 3px solid var(--gold);
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            z-index: 1000;
-            background: #000;
-            display: none;
-        }
-        #camera-preview {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        #capture-btn {
-            position: absolute;
-            bottom: 5px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--gold);
-            border: none;
-            border-radius: 30px;
-            padding: 5px 12px;
-            font-size: 12px;
-            font-weight: bold;
-            color: #000;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-
-        /* Auth screen */
         #login-screen {
-            position: fixed;
-            inset: 0;
-            background: #000;
-            z-index: 10000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 16px;
+            position:fixed; inset:0; background:#000; z-index:9999; display:flex; justify-content:center; align-items:center;
         }
-        .login-card {
-            background: var(--surface);
-            padding: 32px 24px;
-            border-radius: 40px;
-            border: 1px solid var(--gold);
-            width: 100%;
-            max-width: 420px;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+        .login-box {
+            background:rgba(15,15,15,0.95); padding:40px; border-radius:25px; border:2px solid var(--gold); width:90%; max-width:380px; text-align:center;
         }
-        .login-tabs {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 24px;
+        .login-box input {
+            width:100%; padding:16px; margin:12px 0; border-radius:15px; background:#111; color:white; border:1px solid #444; font-size:16px;
         }
-        .tab-btn {
-            flex: 1;
-            background: transparent;
-            border: 1px solid #333;
-            color: #888;
-            padding: 12px;
-            border-radius: 30px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .tab-btn.active {
-            background: var(--gold);
-            color: #000;
-            border-color: var(--gold);
-        }
-        .login-form input {
-            width: 100%;
-            padding: 16px 20px;
-            margin: 10px 0;
-            border-radius: 40px;
-            background: #000;
-            border: 1px solid #333;
-            color: white;
-            font-size: 16px;
-            outline: none;
-            transition: border 0.2s;
-        }
-        .login-form input:focus {
-            border-color: var(--gold);
-        }
-        .login-btn {
-            background: var(--gold);
-            color: #000;
-            font-weight: bold;
-            border: none;
-            width: 100%;
-            padding: 18px;
-            border-radius: 40px;
-            font-size: 18px;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: opacity 0.2s;
-        }
-        .login-btn:disabled {
-            opacity: 0.5;
-            pointer-events: none;
-        }
-        .error-message {
-            color: var(--red);
-            font-size: 14px;
-            margin-top: 8px;
-            text-align: center;
+        .login-box button {
+            background:var(--gold); color:black; width:100%; padding:18px; border:none; border-radius:15px; font-weight:bold; font-size:1.1rem; cursor:pointer; margin-top:10px;
         }
 
-        /* Main app */
-        #main-app {
-            display: none;
-            flex-direction: column;
-            height: 100vh;
-        }
+        #main-app { display:none; flex-direction:column; height:100vh; }
         .top-bar {
-            padding: 16px 20px;
-            background: rgba(0,0,0,0.8);
-            backdrop-filter: blur(10px);
-            border-bottom: 2px solid var(--gold);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 100;
-        }
-        .top-bar-left {
-            display: flex;
-            flex-direction: column;
-        }
-        #header-title {
-            color: var(--gold);
-            font-weight: 700;
-            font-size: 1.2rem;
-        }
-        #header-sub {
-            font-size: 0.7rem;
-            color: #aaa;
-        }
-        .btn-icon {
-            background: transparent;
-            border: 1px solid #333;
-            color: white;
-            width: 44px;
-            height: 44px;
-            border-radius: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-icon:hover {
-            border-color: var(--gold);
-            color: var(--gold);
-        }
-
-        /* Doctor dashboard */
-        #doctor-view {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            display: none;
-        }
-        .section-title {
-            color: #666;
-            font-weight: 600;
-            margin-bottom: 20px;
-            letter-spacing: 0.5px;
-        }
-        .patient-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .patient-card {
-            background: rgba(30,30,30,0.8);
-            backdrop-filter: blur(5px);
-            padding: 20px;
-            border-radius: 24px;
-            border-left: 5px solid var(--gold);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .patient-card:hover {
-            transform: translateX(5px);
-            background: rgba(50,50,50,0.9);
-        }
-        .patient-info h4 {
-            font-size: 1.1rem;
-            margin-bottom: 4px;
-        }
-        .patient-info p {
-            font-size: 0.8rem;
-            color: #aaa;
-        }
-        .online-badge {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 10px;
-            margin-right: 6px;
-        }
-        .block-btn {
-            background: transparent;
-            border: 1px solid var(--red);
-            color: var(--red);
-            padding: 8px 12px;
-            border-radius: 30px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .block-btn:hover {
-            background: var(--red);
-            color: #000;
-        }
-
-        /* Chat view */
-        #chat-view {
-            flex: 1;
-            display: none;
-            flex-direction: column;
-            position: relative;
+            padding:15px 20px; background:rgba(10,10,10,0.95); border-bottom:2px solid var(--gold); display:flex; justify-content:space-between; align-items:center;
         }
         .messages-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px 16px 100px 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+            flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:15px; padding-bottom:100px;
         }
-        .message {
-            max-width: 80%;
-            padding: 12px 18px;
-            border-radius: 24px;
-            font-size: 15px;
-            line-height: 1.4;
-            position: relative;
-            word-wrap: break-word;
+        .msg {
+            padding:14px 18px; border-radius:20px; max-width:80%; font-size:15px; line-height:1.5; position:relative;
         }
-        .message.sent {
-            background: var(--gold);
-            color: #000;
-            align-self: flex-end;
-            border-bottom-right-radius: 6px;
-        }
-        .message.received {
-            background: var(--surface-light);
-            color: white;
-            align-self: flex-start;
-            border-bottom-left-radius: 6px;
-        }
-        .message-meta {
-            font-size: 10px;
-            opacity: 0.7;
-            margin-bottom: 4px;
-            display: block;
-        }
-        .message-image {
-            max-width: 200px;
-            border-radius: 16px;
-            margin-top: 8px;
-            cursor: pointer;
-        }
-        .file-attachment {
-            background: rgba(255,255,255,0.1);
-            padding: 10px 15px;
-            border-radius: 16px;
-            margin-top: 6px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
-            color: white;
-        }
+        .msg.me { background:var(--gold); color:#000; align-self:flex-end; border-bottom-right-radius:4px; }
+        .msg.other { background:#222; color:white; align-self:flex-start; border-bottom-left-radius:4px; }
+        .msg-info { font-size:11px; opacity:0.7; margin-bottom:5px; display:block; }
+
         .input-area {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(20,20,20,0.95);
-            backdrop-filter: blur(10px);
-            padding: 16px 20px;
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            border-top: 1px solid #333;
-            z-index: 50;
+            position:fixed; bottom:0; width:100%; background:#111; padding:15px; display:flex; gap:10px; align-items:center; border-top:1px solid #333;
         }
-        .input-wrapper {
-            flex: 1;
-            background: #000;
-            border-radius: 40px;
-            border: 1px solid #333;
-            display: flex;
-            align-items: center;
-            padding: 4px 4px 4px 20px;
+        .msg-input-wrap {
+            flex:1; background:#000; border-radius:30px; border:1px solid var(--gold); padding:8px 15px; display:flex; align-items:center;
         }
-        .input-wrapper input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: white;
-            padding: 14px 0;
-            font-size: 16px;
-            outline: none;
+        .msg-input-wrap input {
+            flex:1; background:transparent; border:none; color:white; outline:none; font-size:16px;
         }
-        .attach-btn, .camera-btn {
-            background: transparent;
-            border: none;
-            color: var(--gold);
-            font-size: 22px;
-            padding: 8px;
-            cursor: pointer;
-        }
-        .send-btn {
-            background: var(--gold);
-            border: none;
-            width: 54px;
-            height: 54px;
-            border-radius: 40px;
-            color: black;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .send-btn:hover {
-            transform: scale(1.05);
+        .btn-action {
+            background:var(--gold); width:52px; height:52px; border-radius:50%; color:black; border:none; display:flex; justify-content:center; align-items:center; font-size:1.3rem; cursor:pointer;
         }
 
-        /* Loading spinner */
-        .spinner {
-            border: 3px solid rgba(255,255,255,0.1);
-            border-top: 3px solid var(--gold);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 0.8s linear infinite;
-            margin: 20px auto;
+        .user-card {
+            background:rgba(30,30,30,0.9); padding:18px; border-radius:18px; margin-bottom:12px; border-left:5px solid var(--gold); display:flex; justify-content:space-between; align-items:center;
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* Utility */
-        .hidden { display: none !important; }
+        .status-dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; }
     </style>
 </head>
 <body>
+    <div class="app-bg"></div>
 
-<div class="app-bg"></div>
-
-<!-- Camera preview (only for patient) -->
-<div id="camera-preview-container">
-    <video id="camera-preview" autoplay playsinline></video>
-    <button id="capture-btn"><i class="fas fa-camera"></i> Piga Picha</button>
-</div>
-
-<!-- Login Screen -->
-<div id="login-screen">
-    <div class="login-card">
-        <h2 style="text-align:center; color:var(--gold); margin-bottom:30px;">🌍 DR. WILLIAM · v7</h2>
-        
-        <div class="login-tabs">
-            <button class="tab-btn active" id="tab-patient">Mgomjwa</button>
-            <button class="tab-btn" id="tab-doctor">Daktari</button>
-        </div>
-
-        <!-- Patient Form -->
-        <div id="patient-form" class="login-form">
-            <input type="text" id="patient-name" placeholder="Majina kamili (2 au zaidi)" autocomplete="off">
-            <input type="tel" id="patient-phone" placeholder="Namba ya simu (07...)" maxlength="10">
-            <button class="login-btn" id="patient-login-btn">Ingia kama Mgomjwa</button>
-        </div>
-
-        <!-- Doctor Form (hidden by default) -->
-        <div id="doctor-form" class="login-form hidden">
-            <input type="email" id="doctor-email" placeholder="Barua pepe" value="daktari@kliniki.com">
-            <input type="password" id="doctor-password" placeholder="Nywila" value="123456">
-            <button class="login-btn" id="doctor-login-btn">Ingia kama Daktari</button>
-        </div>
-
-        <div id="login-error" class="error-message"></div>
-    </div>
-</div>
-
-<!-- Main App -->
-<div id="main-app">
-    <div class="top-bar">
-        <div class="top-bar-left">
-            <span id="header-title">Cliniki</span>
-            <span id="header-sub"></span>
-        </div>
-        <div>
-            <button class="btn-icon" id="back-btn" style="display:none;"><i class="fas fa-arrow-left"></i></button>
-            <button class="btn-icon" id="logout-btn"><i class="fas fa-sign-out-alt"></i></button>
-        </div>
-    </div>
-
-    <!-- Doctor Dashboard -->
-    <div id="doctor-view">
-        <div class="section-title">WAGONJWA WALIO WETU</div>
-        <div id="patient-list" class="patient-list"></div>
-    </div>
-
-    <!-- Chat View -->
-    <div id="chat-view">
-        <div class="messages-container" id="message-list"></div>
-
-        <div class="input-area">
-            <button class="camera-btn" id="camera-toggle-btn" title="Washa kamera"><i class="fas fa-camera"></i></button>
-            <button class="attach-btn" id="attach-btn" title="Ambisha faili"><i class="fas fa-paperclip"></i></button>
-            <input type="file" id="file-input" class="hidden" accept="image/*,video/*,.pdf,.doc,.docx">
-            
-            <div class="input-wrapper">
-                <input type="text" id="message-input" placeholder="Andika ujumbe...">
+    <!-- LOGIN -->
+    <div id="login-screen">
+        <div class="login-box">
+            <h2 style="color:var(--gold); margin-bottom:20px;">Dr. William Clinic</h2>
+            <div id="patient-form">
+                <input type="text" id="reg-name" placeholder="Majina yako mawili">
+                <input type="tel" id="reg-phone" placeholder="Namba ya simu (07XXXXXXXX)" maxlength="10">
             </div>
-            <button class="send-btn" id="send-btn"><i class="fas fa-paper-plane"></i></button>
+            <input type="password" id="doc-pin" placeholder="Doctor PIN (W005)" style="display:none;">
+            <p onclick="toggleDoctor()" id="doctor-link" style="color:var(--gold); cursor:pointer; margin:15px 0; font-size:14px;">Mimi ni Daktari</p>
+            <button onclick="handleAuth()">ANZA MAZUNGUMZO</button>
         </div>
     </div>
-</div>
 
-<!-- Notification sound -->
-<audio id="notification-sound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3" preload="auto"></audio>
+    <!-- MAIN APP -->
+    <div id="main-app">
+        <div class="top-bar">
+            <div>
+                <b id="header-title" style="color:var(--gold); font-size:1.2rem;">Clinic</b><br>
+                <small id="header-sub" style="color:#888; font-size:12px;"></small>
+            </div>
+            <button onclick="location.reload()" style="background:none; border:1px solid var(--red); color:var(--red); padding:6px 14px; border-radius:12px; font-size:14px;">Rudi Nyumbani</button>
+        </div>
 
-<script>
-    (function() {
-        // ---------- FIREBASE CONFIG (REPLACE WITH YOUR OWN) ----------
-        const firebaseConfig = {
-            apiKey: "AIzaSyB...",           // <-- REPLACE
-            authDomain: "your-project.firebaseapp.com",
-            databaseURL: "https://your-project-default-rtdb.firebaseio.com",
-            projectId: "your-project",
-            storageBucket: "your-project.appspot.com",
-            messagingSenderId: "1234567890",
-            appId: "1:1234567890:web:abc123"
-        };
+        <!-- DOCTOR DASHBOARD -->
+        <div id="doctor-view" style="flex:1; overflow-y:auto; padding:20px; display:none;">
+            <h4 style="color:#777; margin-bottom:15px;">Wagonjwa Wangu (Active)</h4>
+            <div id="patient-list"></div>
+        </div>
 
-        // Initialize Firebase
+        <!-- CHAT -->
+        <div id="chat-view" style="flex:1; display:none; flex-direction:column; position:relative;">
+            <div class="messages-container" id="chat-flow"></div>
+            
+            <div class="input-area">
+                <label for="file-in" style="cursor:pointer; color:var(--gold); font-size:24px; padding:8px;">
+                    <i class="fas fa-paperclip"></i>
+                </label>
+                <input type="file" id="file-in" accept="image/*,.pdf" style="display:none;" onchange="handleFile(this)">
+                
+                <div class="msg-input-wrap">
+                    <input type="text" id="user-msg" placeholder="Andika ujumbe..." onkeypress="if(event.key==='Enter') sendMessage()">
+                </div>
+                <button class="btn-action" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <audio id="notif" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"></audio>
+
+    <script>
+        const firebaseConfig = { databaseURL: "https://drwilliamtz-e44aa-default-rtdb.europe-west1.firebasedatabase.app" };
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
         const db = firebase.database();
-        const storage = firebase.storage();
 
-        // ---------- GLOBAL STATE ----------
-        let currentUser = null;               // { role: 'patient'|'doctor', uid, name, phone?, roomId? }
-        let currentRoomId = null;
-        let activeListeners = { messages: null, patients: null };
-        let cameraStream = null;
-        let isCameraActive = false;
+        let myData = JSON.parse(localStorage.getItem('drwilliam_user'));
+        let isDoctor = localStorage.getItem('drwilliam_isdoc') === 'true';
+        let currentRoom = "";
 
-        // DOM elements
-        const loginScreen = document.getElementById('login-screen');
-        const mainApp = document.getElementById('main-app');
-        const doctorView = document.getElementById('doctor-view');
-        const chatView = document.getElementById('chat-view');
-        const patientList = document.getElementById('patient-list');
-        const messageList = document.getElementById('message-list');
-        const headerTitle = document.getElementById('header-title');
-        const headerSub = document.getElementById('header-sub');
-        const backBtn = document.getElementById('back-btn');
-        const logoutBtn = document.getElementById('logout-btn');
-        const messageInput = document.getElementById('message-input');
-        const sendBtn = document.getElementById('send-btn');
-        const attachBtn = document.getElementById('attach-btn');
-        const fileInput = document.getElementById('file-input');
-        const cameraToggle = document.getElementById('camera-toggle-btn');
-        const cameraPreviewContainer = document.getElementById('camera-preview-container');
-        const cameraPreview = document.getElementById('camera-preview');
-        const captureBtn = document.getElementById('capture-btn');
-        const notificationSound = document.getElementById('notification-sound');
-
-        // Tab switching
-        const tabPatient = document.getElementById('tab-patient');
-        const tabDoctor = document.getElementById('tab-doctor');
-        const patientForm = document.getElementById('patient-form');
-        const doctorForm = document.getElementById('doctor-form');
-        const patientLoginBtn = document.getElementById('patient-login-btn');
-        const doctorLoginBtn = document.getElementById('doctor-login-btn');
-        const loginError = document.getElementById('login-error');
-
-        // ---------- HELPER FUNCTIONS ----------
-        function showError(msg) {
-            loginError.textContent = msg;
+        if (myData) {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('main-app').style.display = 'flex';
+            isDoctor ? showDoctorDashboard() : startPatientChat();
         }
 
-        function clearError() {
-            loginError.textContent = '';
+        function toggleDoctor() {
+            document.getElementById('patient-form').style.display = 'none';
+            document.getElementById('doc-pin').style.display = 'block';
+            document.getElementById('doctor-link').style.display = 'none';
         }
 
-        function formatTime(timestamp) {
-            if (!timestamp) return '';
-            const d = new Date(timestamp);
-            return d.toLocaleTimeString('sw-TZ', { hour: '2-digit', minute: '2-digit' });
-        }
-
-        function escapeHTML(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // ---------- AUTH ----------
-        tabPatient.addEventListener('click', () => {
-            tabPatient.classList.add('active');
-            tabDoctor.classList.remove('active');
-            patientForm.classList.remove('hidden');
-            doctorForm.classList.add('hidden');
-            clearError();
-        });
-
-        tabDoctor.addEventListener('click', () => {
-            tabDoctor.classList.add('active');
-            tabPatient.classList.remove('active');
-            doctorForm.classList.remove('hidden');
-            patientForm.classList.add('hidden');
-            clearError();
-        });
-
-        // Patient login (anonymous with custom data)
-        patientLoginBtn.addEventListener('click', async () => {
-            const name = document.getElementById('patient-name').value.trim();
-            const phone = document.getElementById('patient-phone').value.trim();
-
-            if (!name || name.split(' ').length < 2) {
-                return showError('Tafadhali jaza majina kamili (angalau maneno mawili)');
-            }
-            if (!phone || phone.length < 10 || !phone.startsWith('07')) {
-                return showError('Namba ya simu sahihi inayotakiwa (07xxxxxxxx)');
-            }
-
-            clearError();
-            patientLoginBtn.disabled = true;
-
-            try {
-                // Sign in anonymously to get a uid
-                const cred = await auth.signInAnonymously();
-                const uid = cred.user.uid;
-                const roomId = `room_${phone}`;
-
-                // Store patient data in Realtime DB
-                await db.ref(`patients/${roomId}`).set({
-                    uid,
-                    name,
-                    phone,
-                    roomId,
-                    lastSeen: Date.now(),
-                    blocked: false,
-                    createdAt: Date.now()
-                });
-
-                currentUser = { role: 'patient', uid, name, phone, roomId };
-                localStorage.setItem('william_v7_user', JSON.stringify({ role: 'patient', name, phone, roomId }));
-
-                // Start main app
-                loginScreen.style.display = 'none';
-                mainApp.style.display = 'flex';
-                startPatientSession(roomId, name, phone);
-            } catch (error) {
-                showError('Hitilafu: ' + error.message);
-            } finally {
-                patientLoginBtn.disabled = false;
-            }
-        });
-
-        // Doctor login (email/password)
-        doctorLoginBtn.addEventListener('click', async () => {
-            const email = document.getElementById('doctor-email').value.trim();
-            const password = document.getElementById('doctor-password').value.trim();
-
-            if (!email || !password) {
-                return showError('Ingiza barua pepe na nywila');
-            }
-
-            clearError();
-            doctorLoginBtn.disabled = true;
-
-            try {
-                const cred = await auth.signInWithEmailAndPassword(email, password);
-                const uid = cred.user.uid;
-
-                // Check if doctor exists in DB (you can pre-create a doctor node)
-                // For simplicity, we create a doctor record if not exists
-                const doctorRef = db.ref(`doctors/${uid}`);
-                const snap = await doctorRef.once('value');
-                if (!snap.exists()) {
-                    await doctorRef.set({ email, name: 'Dr. William', registeredAt: Date.now() });
+        function handleAuth() {
+            const pin = document.getElementById('doc-pin').value.trim();
+            if (pin === "W005") {
+                isDoctor = true;
+                myData = { name: "Dr. William" };
+                localStorage.setItem('drwilliam_isdoc', 'true');
+            } else {
+                const name = document.getElementById('reg-name').value.trim();
+                const phone = document.getElementById('reg-phone').value.trim();
+                if (name.split(' ').length < 2 || phone.length !== 10 || !phone.startsWith('0')) {
+                    return alert("Tafadhali jaza majina mawili na namba sahihi (07XXXXXXXX)");
                 }
-
-                currentUser = { role: 'doctor', uid, email, name: 'Dr. William' };
-                localStorage.setItem('william_v7_user', JSON.stringify({ role: 'doctor', email }));
-
-                loginScreen.style.display = 'none';
-                mainApp.style.display = 'flex';
-                loadDoctorDashboard();
-            } catch (error) {
-                showError('Hitilafu: ' + error.message);
-            } finally {
-                doctorLoginBtn.disabled = false;
+                const roomId = "room_" + phone;
+                myData = { name, phone, roomId };
+                db.ref('patients/' + roomId).set({ ...myData, lastSeen: Date.now(), blocked: false });
             }
-        });
-
-        // Check for existing session
-        (function initSession() {
-            const saved = localStorage.getItem('william_v7_user');
-            if (!saved) return;
-
-            try {
-                const data = JSON.parse(saved);
-                if (data.role === 'patient' && data.name && data.phone && data.roomId) {
-                    currentUser = { role: 'patient', ...data };
-                    loginScreen.style.display = 'none';
-                    mainApp.style.display = 'flex';
-                    startPatientSession(data.roomId, data.name, data.phone);
-                } else if (data.role === 'doctor' && data.email) {
-                    // We need to re-authenticate or check current user
-                    if (auth.currentUser) {
-                        currentUser = { role: 'doctor', uid: auth.currentUser.uid, email: data.email, name: 'Dr. William' };
-                        loginScreen.style.display = 'none';
-                        mainApp.style.display = 'flex';
-                        loadDoctorDashboard();
-                    } else {
-                        // Force re-login
-                        localStorage.removeItem('william_v7_user');
-                    }
-                }
-            } catch (e) {
-                localStorage.removeItem('william_v7_user');
-            }
-        })();
-
-        // Logout
-        logoutBtn.addEventListener('click', async () => {
-            // Cleanup
-            if (activeListeners.messages) db.ref('messages/' + currentRoomId).off('child_added', activeListeners.messages);
-            if (activeListeners.patients) db.ref('patients').off('value', activeListeners.patients);
-            if (cameraStream) {
-                cameraStream.getTracks().forEach(t => t.stop());
-                cameraStream = null;
-            }
-            isCameraActive = false;
-            cameraPreviewContainer.style.display = 'none';
-
-            await auth.signOut();
-            localStorage.removeItem('william_v7_user');
-            location.reload(); // simple reset
-        });
-
-        // Back button (from chat to doctor dashboard)
-        backBtn.addEventListener('click', () => {
-            if (currentUser?.role === 'doctor') {
-                chatView.style.display = 'none';
-                doctorView.style.display = 'block';
-                backBtn.style.display = 'none';
-                headerTitle.textContent = 'Doctor Terminal';
-                headerSub.textContent = '';
-
-                // Clean up message listener
-                if (activeListeners.messages) {
-                    db.ref('messages/' + currentRoomId).off('child_added', activeListeners.messages);
-                    activeListeners.messages = null;
-                }
-                currentRoomId = null;
-            }
-        });
-
-        // ---------- DOCTOR DASHBOARD ----------
-        function loadDoctorDashboard() {
-            doctorView.style.display = 'block';
-            chatView.style.display = 'none';
-            backBtn.style.display = 'none';
-            headerTitle.textContent = 'Doctor Terminal';
-            headerSub.textContent = '';
-
-            if (activeListeners.patients) db.ref('patients').off('value', activeListeners.patients);
-
-            const callback = (snapshot) => {
-                const patients = [];
-                snapshot.forEach(child => {
-                    const data = child.val();
-                    if (!data.blocked) patients.push({ id: child.key, ...data });
-                });
-
-                renderPatientList(patients);
-            };
-
-            db.ref('patients').on('value', callback);
-            activeListeners.patients = callback;
+            localStorage.setItem('drwilliam_user', JSON.stringify(myData));
+            location.reload();
         }
 
-        function renderPatientList(patients) {
-            if (!patientList) return;
-            if (patients.length === 0) {
-                patientList.innerHTML = '<div style="text-align:center; color:#666; padding:30px;">Hakuna mgonjwa kwa sasa</div>';
-                return;
-            }
+        function showDoctorDashboard() {
+            document.getElementById('doctor-view').style.display = 'block';
+            document.getElementById('chat-view').style.display = 'none';
+            document.getElementById('header-title').innerText = "Doctor Panel";
 
-            const now = Date.now();
-            let html = '';
-            patients.forEach(p => {
-                const online = (now - (p.lastSeen || 0)) < 15000; // 15 seconds
-                html += `
-                    <div class="patient-card" data-roomid="${p.roomId}" data-name="${escapeHTML(p.name)}" data-phone="${escapeHTML(p.phone)}">
-                        <div class="patient-info">
-                            <h4>${escapeHTML(p.name)}</h4>
-                            <p>${escapeHTML(p.phone)} <span class="online-badge" style="background:${online ? '#2ed573' : '#ff4757'}"></span> ${online ? 'Online' : 'Offline'}</p>
-                        </div>
-                        <button class="block-btn" data-roomid="${p.roomId}" onclick="event.stopPropagation(); blockPatient('${p.roomId}')">ZUIA</button>
-                    </div>
-                `;
-            });
-
-            patientList.innerHTML = html;
-
-            // Add click listeners to cards
-            document.querySelectorAll('.patient-card').forEach(card => {
-                card.addEventListener('click', (e) => {
-                    const roomId = card.dataset.roomid;
-                    const name = card.dataset.name;
-                    const phone = card.dataset.phone;
-                    enterChatAsDoctor(roomId, name, phone);
+            db.ref('patients').on('value', snap => {
+                const list = document.getElementById('patient-list');
+                list.innerHTML = "";
+                snap.forEach(child => {
+                    const p = child.val();
+                    if (p.blocked) return;
+                    const online = (Date.now() - p.lastSeen) < 20000;
+                    list.innerHTML += `
+                        <div class="user-card">
+                            <div onclick="openChat('${child.key}', '${p.name}', '${p.phone}')">
+                                <b>${p.name}</b><br>
+                                <small style="color:#aaa;">${p.phone}</small><br>
+                                <span class="status-dot" style="background:${online ? 'var(--green)' : 'var(--red)'}"></span>
+                                ${online ? 'Online' : 'Offline'}
+                            </div>
+                            <button onclick="blockPatient('${child.key}')" style="background:none; border:1px solid var(--red); color:var(--red); padding:6px 12px; border-radius:8px; font-size:13px;">BLOCK</button>
+                        </div>`;
                 });
             });
         }
 
-        window.blockPatient = async (roomId) => {
-            if (confirm('Una uhakika unataka kumzuia mgonjwa huyu?')) {
-                await db.ref(`patients/${roomId}`).update({ blocked: true });
-            }
-        };
+        function openChat(roomId, name, phone) {
+            currentRoom = roomId;
+            document.getElementById('doctor-view').style.display = 'none';
+            document.getElementById('chat-view').style.display = 'flex';
+            document.getElementById('header-title').innerText = name;
+            document.getElementById('header-sub').innerText = phone;
 
-        function enterChatAsDoctor(roomId, patientName, patientPhone) {
-            currentRoomId = roomId;
-            doctorView.style.display = 'none';
-            chatView.style.display = 'flex';
-            backBtn.style.display = 'block';
-            headerTitle.textContent = patientName;
-            headerSub.textContent = patientPhone;
-
-            // Load messages
-            if (activeListeners.messages) db.ref('messages/' + roomId).off('child_added', activeListeners.messages);
-
-            const msgCallback = (snapshot) => {
-                const msg = snapshot.val();
-                appendMessage(msg, 'doctor');
-            };
-
-            db.ref('messages/' + roomId).on('child_added', msgCallback);
-            activeListeners.messages = msgCallback;
+            db.ref('messages/' + roomId).off();
+            db.ref('messages/' + roomId).on('child_added', snap => {
+                appendMessage(snap.val());
+            });
         }
 
-        // ---------- PATIENT SESSION ----------
-        function startPatientSession(roomId, name, phone) {
-            currentRoomId = roomId;
-            doctorView.style.display = 'none';
-            chatView.style.display = 'flex';
-            backBtn.style.display = 'none'; // patient cannot go back to dashboard
-            headerTitle.textContent = 'Dr. William';
-            headerSub.textContent = 'Daktari wa pembeni';
-
-            // Load messages
-            if (activeListeners.messages) db.ref('messages/' + roomId).off('child_added', activeListeners.messages);
-
-            const msgCallback = (snapshot) => {
-                const msg = snapshot.val();
-                appendMessage(msg, 'patient');
-            };
-
-            db.ref('messages/' + roomId).on('child_added', msgCallback);
-            activeListeners.messages = msgCallback;
-
-            // Update lastSeen every 8 seconds
+        function startPatientChat() {
+            openChat(myData.roomId, "Dr. William", "Medical Advisor");
             setInterval(() => {
-                db.ref(`patients/${roomId}`).update({ lastSeen: Date.now() });
-            }, 8000);
-
-            // Setup camera controls (only patient sees camera button)
-            cameraToggle.classList.remove('hidden');
+                db.ref('patients/' + myData.roomId).update({ lastSeen: Date.now() });
+            }, 10000);
         }
 
-        // ---------- CHAT: APPEND MESSAGE ----------
-        function appendMessage(msg, viewerRole) {
+        function appendMessage(msg) {
+            const container = document.getElementById('chat-flow');
             const div = document.createElement('div');
-            div.classList.add('message');
-
-            const isMe = (viewerRole === 'doctor' && msg.sender === 'Dr. William') ||
-                         (viewerRole === 'patient' && msg.sender !== 'Dr. William');
-
-            div.classList.add(isMe ? 'sent' : 'received');
-
-            let content = `<span class="message-meta">${escapeHTML(msg.sender || 'Mtu')} · ${formatTime(msg.timestamp)}</span>`;
-
-            if (msg.type === 'text') {
-                content += `<span>${escapeHTML(msg.text)}</span>`;
-            } else if (msg.type === 'image' && msg.imageUrl) {
-                content += `<img src="${escapeHTML(msg.imageUrl)}" class="message-image" alt="picha" onclick="window.open(this.src)">`;
-            } else if (msg.type === 'file' && msg.fileUrl) {
-                content += `<a href="${escapeHTML(msg.fileUrl)}" target="_blank" class="file-attachment"><i class="fas fa-download"></i> ${escapeHTML(msg.fileName || 'Faili')}</a>`;
-            } else {
-                content += `<span>${escapeHTML(msg.text || '')}</span>`;
-            }
-
-            div.innerHTML = content;
-            messageList.appendChild(div);
-            messageList.scrollTop = messageList.scrollHeight;
-
-            // Play sound if not me
-            if (!isMe) {
-                notificationSound.play().catch(() => {});
-            }
+            const isMe = (isDoctor && msg.sender === "Dr. William") || (!isDoctor && msg.sender === myData.name);
+            div.className = `msg ${isMe ? 'me' : 'other'}`;
+            div.innerHTML = `<span class="msg-info">${msg.sender}</span>${msg.text}`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+            if (!isMe) document.getElementById('notif').play();
         }
 
-        // ---------- SEND MESSAGE (TEXT) ----------
-        async function sendMessage(text, type = 'text', extra = {}) {
-            if (!currentRoomId || !currentUser) return;
-
-            const sender = currentUser.role === 'doctor' ? 'Dr. William' : currentUser.name;
-            const message = {
-                sender,
-                text: text || '',
-                timestamp: Date.now(),
-                type,
-                ...extra
-            };
-
-            await db.ref(`messages/${currentRoomId}`).push(message);
+        function sendMessage() {
+            const input = document.getElementById('user-msg');
+            if (!input.value.trim()) return;
+            db.ref('messages/' + currentRoom).push({
+                sender: isDoctor ? "Dr. William" : myData.name,
+                text: input.value.trim(),
+                time: Date.now()
+            });
+            input.value = "";
         }
 
-        sendBtn.addEventListener('click', () => {
-            const text = messageInput.value.trim();
-            if (!text) return;
-            sendMessage(text, 'text');
-            messageInput.value = '';
-        });
-
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                sendBtn.click();
-            }
-        });
-
-        // ---------- FILE ATTACHMENT ----------
-        attachBtn.addEventListener('click', () => {
-            fileInput.click();
-        });
-
-        fileInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file || !currentRoomId) return;
-
-            // Show loading indicator maybe
-            const loadingId = `upload-${Date.now()}`;
-            // Disable input
-            attachBtn.disabled = true;
-
-            try {
-                const fileRef = storage.ref(`chat-files/${currentRoomId}/${Date.now()}_${file.name}`);
-                await fileRef.put(file);
-                const downloadUrl = await fileRef.getDownloadURL();
-
-                const isImage = file.type.startsWith('image/');
-                if (isImage) {
-                    await sendMessage('📸 Picha', 'image', { imageUrl: downloadUrl, fileName: file.name });
-                } else {
-                    await sendMessage(`📎 Faili: ${file.name}`, 'file', { fileUrl: downloadUrl, fileName: file.name });
-                }
-            } catch (err) {
-                alert('Hitilafu wakati wa kupakia faili');
-                console.error(err);
-            } finally {
-                attachBtn.disabled = false;
-                fileInput.value = ''; // clear
-            }
-        });
-
-        // ---------- CAMERA (PATIENT ONLY) ----------
-        cameraToggle.addEventListener('click', async () => {
-            if (!isCameraActive) {
-                try {
-                    cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-                    cameraPreview.srcObject = cameraStream;
-                    cameraPreviewContainer.style.display = 'block';
-                    isCameraActive = true;
-                    cameraToggle.innerHTML = '<i class="fas fa-camera-slash"></i>';
-                } catch (err) {
-                    alert('Kamere haipatikani');
-                }
-            } else {
-                // Stop camera
-                if (cameraStream) {
-                    cameraStream.getTracks().forEach(t => t.stop());
-                    cameraStream = null;
-                }
-                cameraPreviewContainer.style.display = 'none';
-                isCameraActive = false;
-                cameraToggle.innerHTML = '<i class="fas fa-camera"></i>';
-            }
-        });
-
-        // Capture photo and send
-        captureBtn.addEventListener('click', async () => {
-            if (!cameraStream || !currentRoomId) return;
-
-            // Create a canvas to capture frame
-            const canvas = document.createElement('canvas');
-            canvas.width = cameraPreview.videoWidth;
-            canvas.height = cameraPreview.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(cameraPreview, 0, 0, canvas.width, canvas.height);
-
-            // Convert to blob
-            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.8));
-            if (!blob) return;
-
-            // Upload to Firebase Storage
-            const fileName = `camera_${Date.now()}.jpg`;
-            const fileRef = storage.ref(`chat-files/${currentRoomId}/${fileName}`);
-            await fileRef.put(blob);
-            const downloadUrl = await fileRef.getDownloadURL();
-
-            // Send as image message
-            await sendMessage('📸 Picha kutoka kamera', 'image', { imageUrl: downloadUrl, fileName });
-
-            // Keep camera on for next shots
-        });
-
-        // ---------- CLEANUP ON UNLOAD ----------
-        window.addEventListener('beforeunload', () => {
-            if (cameraStream) {
-                cameraStream.getTracks().forEach(t => t.stop());
-            }
-        });
-
-    })();
-</script>
-
-<!-- Firebase Security Rules (copy-paste in Firebase console) 
-{
-  "rules": {
-    "patients": {
-      ".read": "auth != null",
-      ".write": "auth != null",
-      "$roomId": {
-        ".validate": "newData.hasChildren(['name', 'phone', 'roomId', 'lastSeen'])",
-        "blocked": { ".validate": "newData.isBoolean()" }
-      }
-    },
-    "doctors": {
-      ".read": "auth != null",
-      ".write": "auth != null && root.child('doctors/'+auth.uid).exists()"
-    },
-    "messages": {
-      "$roomId": {
-        ".read": "auth != null",
-        ".write": "auth != null",
-        "$msgId": {
-          ".validate": "newData.hasChildren(['sender', 'timestamp'])",
-          "type": { ".validate": "newData.isString()" }
+        function handleFile(input) {
+            if (!input.files[0]) return;
+            const fileName = input.files[0].name;
+            let icon = fileName.toLowerCase().endsWith('.pdf') ? '📄' : '📷';
+            db.ref('messages/' + currentRoom).push({
+                sender: isDoctor ? "Dr. William" : myData.name,
+                text: `${icon} Attachment: ${fileName} (Picha/faili imetumwa)`,
+                time: Date.now()
+            });
+            input.value = "";
         }
-      }
-    }
-  }
-}
--->
+
+        function blockPatient(id) {
+            if (confirm("Unataka kumzuia mgonjwa huyu?")) {
+                db.ref('patients/' + id).update({ blocked: true });
+            }
+        }
+    </script>
 </body>
 </html>
