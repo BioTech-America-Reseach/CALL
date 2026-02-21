@@ -3,13 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dr. William: Tiba Asili & Kisasa</title>
     
+    <!-- BASIC META -->
+    <title>Dr. William: Tiba Asili & Kisasa</title>
+    <meta name="description" content="Huduma za afya kwa njia ya kisasa na asili. Wasiliana na Daktari William kwa ushauri na tiba.">
+    <meta name="keywords" content="daktari, tiba asili, clinic, dr william, afya, online doctor">
+    <meta name="author" content="Dr. William Clinic">
+    <link rel="canonical" href="https://call-blue-five.vercel.app">
+
+    <!-- FAVICON (icon itakayoonekana kwenye tab ya browser) -->
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2785/2785482.png">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2785/2785482.png">
+
+    <!-- OPEN GRAPH / FACEBOOK / WHATSAPP / TELEGRAM -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://call-blue-five.vercel.app">
+    <meta property="og:title" content="Dr. William - Tiba Asili & Kisasa">
+    <meta property="og:description" content="Huduma za afya kwa njia ya kisasa na asili. Wasiliana na Daktari William kwa ushauri na tiba.">
+    <meta property="og:image" content="https://cdn-icons-png.flaticon.com/512/2785/2785482.png">
+    <meta property="og:image:width" content="512">
+    <meta property="og:image:height" content="512">
+    <meta property="og:site_name" content="Dr. William Clinic">
+
+    <!-- TWITTER CARD (optional) -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://call-blue-five.vercel.app">
+    <meta name="twitter:title" content="Dr. William - Tiba Asili & Kisasa">
+    <meta name="twitter:description" content="Huduma za afya kwa njia ya kisasa na asili.">
+    <meta name="twitter:image" content="https://cdn-icons-png.flaticon.com/512/2785/2785482.png">
+
+    <!-- LINK TO MANIFEST (PWA) -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2d5a27">
+
+    <!-- FONTS & ICONS -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- FIREBASE SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
@@ -108,7 +139,8 @@
 
     <div id="login-screen">
         <div class="login-box">
-            <img src="https://cdn-icons-png.flaticon.com/512/2785/2785482.png" width="80" style="margin-bottom:10px;">
+            <!-- Logo inaitwa pia kwenye login box, lakini picha sawa na OG image -->
+            <img src="https://cdn-icons-png.flaticon.com/512/2785/2785482.png" width="80" style="margin-bottom:10px;" alt="Dr. William Logo">
             <h2>DR. WILLIAM CLINIC</h2>
             <div id="patient-inputs">
                 <input type="text" id="reg-name" placeholder="Majina Yako Mawili">
@@ -172,7 +204,7 @@
             const phone = document.getElementById('reg-phone').value.trim();
             const pin = document.getElementById('doc-pin').value;
 
-            if(pin === "W005") {
+            if(pin === "******") {
                 isDoc = true; myData = { name: "Dr. William" };
                 localStorage.setItem('william_v3_isdoc', 'true');
             } else {
