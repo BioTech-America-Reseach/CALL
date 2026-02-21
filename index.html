@@ -10,7 +10,6 @@
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
     <style>
         :root { --gold: #D4AF37; --bg: #000; --green: #2ecc71; --red: #e74c3c; }
@@ -50,9 +49,8 @@
         .msg-me { background: var(--gold); color: black; align-self: flex-end; }
         .msg-other { background: #222; color: white; align-self: flex-start; }
         .msg-time { font-size: 0.65rem; color: #aaa; margin-top: 3px; text-align: right; }
-        .message img { max-width: 100%; border-radius: 8px; margin-top: 5px; cursor: pointer; }
 
-        /* Typing area */
+        /* Typing area - Imeboreshwa kwa keyboard */
         .typing-area {
             position: fixed;
             bottom: 20px;
@@ -65,7 +63,7 @@
             align-items: center;
             border-top: 1px solid var(--gold);
             z-index: 3000;
-            transition: bottom 0.2s ease-out;
+            transition: bottom 0.2s ease-out; /* Laini zaidi */
             box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
         }
         .input-wrapper {
@@ -83,7 +81,7 @@
             padding: 12px 0;
             font-size: 16px;
             outline: none;
-            enterkeyhint: send;
+            enterkeyhint: send; /* Inaonyesha "Tuma" kwenye keyboard ya simu */
         }
         .btn-send {
             background: var(--gold);
@@ -103,24 +101,13 @@
             transform: scale(0.95);
         }
 
-        /* Action buttons (chat) */
+        /* Action buttons */
         .action-buttons {
-            display: flex;
-            justify-content: space-around;
-            padding: 10px;
-            background: #111;
-            border-top: 1px solid #333;
+            display: flex; justify-content: space-around; padding: 10px; background: #111; border-top: 1px solid #333;
         }
         .action-btn {
-            background: transparent;
-            border: none;
-            color: #aaa;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.7rem;
-            cursor: pointer;
+            background: transparent; border: none; color: #aaa; display: flex; flex-direction: column;
+            align-items: center; gap: 5px; font-size: 0.7rem; cursor: pointer;
         }
         .action-btn i { font-size: 1.3rem; padding: 10px; border-radius: 50%; background: #222; }
         .action-btn:hover i { background: var(--gold); color: black; }
@@ -163,17 +150,14 @@
         .status-online { background: rgba(46, 204, 113, 0.2); color: var(--green); border: 1px solid var(--green); }
         .status-waiting { background: rgba(241, 196, 15, 0.2); color: #f1c40f; border: 1px solid #f1c40f; }
         
-        .patient-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .patient-actions { display: flex; gap: 10px; }
         .btn-action {
-            flex: 1 0 auto; padding: 8px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
+            flex: 1; padding: 8px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
             display: flex; align-items: center; justify-content: center; gap: 5px;
-            font-size: 0.8rem;
         }
         .btn-hold { background: #f39c12; color: black; }
         .btn-remove { background: var(--red); color: white; }
         .btn-chat { background: var(--gold); color: black; }
-        .btn-camera { background: #3498db; color: white; }
-        .btn-mic { background: #9b59b6; color: white; }
 
         .waiting-message {
             background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 10px;
@@ -257,7 +241,6 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        const storage = firebase.storage();
 
         // ==================== GLOBAL VARIABLES ====================
         let myName = "";
@@ -346,65 +329,6 @@
                     loginScreen.style.display = 'none';
                     mainInterface.style.display = 'flex';
                     openPatientChat(myPhone);
-
-                    // ------------------- LISTEN FOR REQUESTS FROM DOCTOR -------------------
-                    // Kamera request
-                    db.ref('requests/camera/' + myPhone).on('value', async (snap) => {
-                        if (snap.val() === true) {
-                            try {
-                                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                                // Capture a photo
-                                const video = document.createElement('video');
-                                video.srcObject = stream;
-                                video.play();
-                                // Wait a bit for camera to initialize
-                                setTimeout(() => {
-                                    const canvas = document.createElement('canvas');
-                                    canvas.width = video.videoWidth || 640;
-                                    canvas.height = video.videoHeight || 480;
-                                    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-                                    canvas.toBlob(async (blob) => {
-                                        // Upload to storage
-                                        const storageRef = storage.ref(`photos/${myPhone}/${Date.now()}.jpg`);
-                                        await storageRef.put(blob);
-                                        const url = await storageRef.getDownloadURL();
-                                        // Send as message
-                                        db.ref('messages/' + myPhone).push({
-                                            sender: myName,
-                                            text: '',
-                                            imageUrl: url,
-                                            timestamp: firebase.database.ServerValue.TIMESTAMP
-                                        });
-                                        // Stop stream
-                                        stream.getTracks().forEach(t => t.stop());
-                                        // Reset request
-                                        db.ref('requests/camera/' + myPhone).remove();
-                                    }, 'image/jpeg');
-                                }, 500);
-                            } catch (err) {
-                                console.error('Camera error', err);
-                                // Send error message
-                                db.ref('messages/' + myPhone).push({
-                                    sender: "System",
-                                    text: "❌ Imeshindwa kufungua kamera. Hakikisha umeiruhusu.",
-                                    timestamp: firebase.database.ServerValue.TIMESTAMP
-                                });
-                                db.ref('requests/camera/' + myPhone).remove();
-                            }
-                        }
-                    });
-
-                    // Mic request (kwa sasa tunatuma ujumbe tu, unaweza kupanua)
-                    db.ref('requests/mic/' + myPhone).on('value', (snap) => {
-                        if (snap.val() === true) {
-                            db.ref('messages/' + myPhone).push({
-                                sender: "System",
-                                text: "🎤 Daktari anaomba kuwasha maikrofoni yako. (Huduma ya sauti inatengenezwa)",
-                                timestamp: firebase.database.ServerValue.TIMESTAMP
-                            });
-                            db.ref('requests/mic/' + myPhone).remove();
-                        }
-                    });
                 });
             } else { // Daktari
                 isDoctor = true;
@@ -448,9 +372,7 @@
                             <div class="patient-actions">
                                 <button class="btn-action btn-hold" onclick="holdPatient('${phone}')"><i class="fas fa-pause"></i> Subirisha</button>
                                 <button class="btn-action btn-remove" onclick="removePatient('${phone}')"><i class="fas fa-ban"></i> Ondoa</button>
-                                <button class="btn-action btn-camera" onclick="requestCamera('${phone}')"><i class="fas fa-camera"></i> Kamera</button>
-                                <button class="btn-action btn-mic" onclick="requestMic('${phone}')"><i class="fas fa-microphone"></i> Sauti</button>
-                                <button class="btn-action btn-chat" onclick="openDoctorChat('${phone}', '${p.name}')"><i class="fas fa-comment"></i> Gumzo</button>
+                                <button class="btn-action btn-chat" onclick="openDoctorChat('${phone}', '${p.name}')"><i class="fas fa-comment"></i> Chat</button>
                             </div>
                         </div>
                     `;
@@ -481,24 +403,6 @@
             db.ref('blocked/' + phone).set({ phone: phone, timestamp: Date.now() });
             db.ref('patients/' + phone).remove();
             db.ref('messages/' + phone).remove();
-            // Also remove any requests
-            db.ref('requests/camera/' + phone).remove();
-            db.ref('requests/mic/' + phone).remove();
-        };
-
-        window.requestCamera = function(phone) {
-            db.ref('requests/camera/' + phone).set(true);
-            // Show a quick notification
-            notificationArea.style.display = 'flex';
-            notificationArea.innerHTML = `<i class="fas fa-camera"></i> Ombi la kamera limetumwa kwa mgonjwa.`;
-            setTimeout(() => notificationArea.style.display = 'none', 3000);
-        };
-
-        window.requestMic = function(phone) {
-            db.ref('requests/mic/' + phone).set(true);
-            notificationArea.style.display = 'flex';
-            notificationArea.innerHTML = `<i class="fas fa-microphone"></i> Ombi la sauti limetumwa.`;
-            setTimeout(() => notificationArea.style.display = 'none', 3000);
         };
 
         window.openDoctorChat = function(phone, patientName) {
@@ -552,14 +456,7 @@
                 const div = document.createElement('div');
                 div.className = `message ${isMe ? 'msg-me' : 'msg-other'}`;
                 const time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : '';
-                let content = `<b>${msg.sender}</b><br>`;
-                if (msg.imageUrl) {
-                    content += `<img src="${msg.imageUrl}" onclick="window.open(this.src)">`;
-                } else {
-                    content += msg.text;
-                }
-                content += `<div class="msg-time">${time}</div>`;
-                div.innerHTML = content;
+                div.innerHTML = `<b>${msg.sender}</b><br>${msg.text}<div class="msg-time">${time}</div>`;
                 chatFlow.appendChild(div);
                 chatFlow.scrollTop = chatFlow.scrollHeight;
                 if (!isMe) document.getElementById('notifSound').play();
@@ -577,7 +474,7 @@
             });
             
             msgInput.value = "";
-            msgInput.focus();
+            msgInput.focus(); // Endelea kuandika
         };
 
         // ==================== ENTER KEY ====================
@@ -588,12 +485,15 @@
             }
         });
 
-        // ==================== KUSHUGHULIKIA KIBODI (SMOOTH) ====================
+        // ==================== KUSHUGHULIKIA KIBODI KWA KISASA ====================
         function adjustForKeyboard() {
+            // Tumia visualViewport kugundua urefu wa keyboard
             if (window.visualViewport) {
                 const keyboardHeight = window.innerHeight - window.visualViewport.height;
+                // Weka typing area juu ya keyboard (au 20px kama hakuna keyboard)
                 typingArea.style.bottom = Math.max(20, keyboardHeight) + 'px';
                 
+                // Hakikisha ujumbe wa mwisho unaonekana
                 if (chatFlow.children.length > 0) {
                     setTimeout(() => {
                         chatFlow.scrollTop = chatFlow.scrollHeight;
@@ -602,17 +502,20 @@
             }
         }
 
+        // Sajili kusikiliza mabadiliko ya ukubwa wa dirisha (kibodi inapofunguliwa)
         if (window.visualViewport) {
             window.visualViewport.addEventListener('resize', adjustForKeyboard);
         } else {
             window.addEventListener('resize', adjustForKeyboard);
         }
 
+        // Pia rekebisha wakati input inapata focus (kibodi itafunguka)
         msgInput.addEventListener('focus', () => {
-            setTimeout(adjustForKeyboard, 100);
+            setTimeout(adjustForKeyboard, 100); // subiri kidogo kibodi ijitokeze
         });
 
         msgInput.addEventListener('blur', () => {
+            // Wakati kibodi inafichika, rudisha typing area chini
             typingArea.style.bottom = '20px';
         });
 
@@ -636,6 +539,13 @@
                 ? "Habari, naitwa Dr. William. Nataka kutuma picha."
                 : `Habari Dr. William, naitwa ${myName} (${myPhone}). Nataka kutuma picha.`;
             window.open(`https://wa.me/255762286282?text=${encodeURIComponent(msg)}`, '_blank');
+        };
+
+        // Auto-login (optional)
+        window.onload = function() {
+            if (savedName && savedPhone) {
+                // Tafadhali weka code ya auto-login ukitaka
+            }
         };
     </script>
 </body>
