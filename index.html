@@ -2,7 +2,7 @@
 <html lang="sw">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Dr. William · Mawasiliano ya Siri</title>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -28,7 +28,6 @@
             justify-content: center;
             position: relative;
         }
-        /* Background ya siri */
         .bg-pattern {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -78,7 +77,6 @@
         .modal-box h2 {
             color: #D4AF37;
             margin-bottom: 20px;
-            font-family: 'Poppins', sans-serif;
         }
         .modal-box input {
             width: 100%;
@@ -144,17 +142,49 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
-        /* Spinner */
-        .spinner {
-            border: 4px solid rgba(255,255,255,0.1);
-            border-top: 4px solid #D4AF37;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            animation: spin 1s linear infinite;
+        /* Spinner ya meli (calling animation) */
+        .ship-spinner {
+            position: relative;
+            width: 100px;
+            height: 100px;
             margin: 20px auto;
         }
+        .ship-spinner .outer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 4px solid transparent;
+            border-top: 4px solid #D4AF37;
+            border-right: 4px solid #D4AF37;
+            border-radius: 50%;
+            animation: spin 2s linear infinite;
+        }
+        .ship-spinner .inner {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            bottom: 15px;
+            border: 4px solid transparent;
+            border-bottom: 4px solid #D4AF37;
+            border-left: 4px solid #D4AF37;
+            border-radius: 50%;
+            animation: spin-reverse 1.5s linear infinite;
+        }
+        .ship-spinner .center {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            width: 20px;
+            height: 20px;
+            background: #D4AF37;
+            border-radius: 50%;
+            opacity: 0.7;
+            animation: pulse 1s infinite;
+        }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes spin-reverse { 0% { transform: rotate(0deg); } 100% { transform: rotate(-360deg); } }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.5); opacity: 0.3; } 100% { transform: scale(1); opacity: 0.7; } }
         /* Doctor dashboard */
         #doctor-dashboard {
             display: none;
@@ -184,6 +214,23 @@
         }
         .patient-item .offline-dot {
             background: #e74c3c;
+        }
+        .patient-actions {
+            display: flex;
+            gap: 5px;
+        }
+        .block-btn, .mute-btn {
+            background: transparent;
+            border: 1px solid #ff4444;
+            color: #ff4444;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .mute-btn {
+            border-color: #ffaa00;
+            color: #ffaa00;
         }
         /* Chat area */
         #chat-area {
@@ -219,6 +266,7 @@
             padding: 10px 15px;
             border-radius: 18px;
             font-size: 14px;
+            position: relative;
         }
         .message.sent {
             background: #D4AF37;
@@ -228,6 +276,11 @@
         .message.received {
             background: #2a2a2a;
             align-self: flex-start;
+        }
+        .message-status {
+            font-size: 10px;
+            color: #aaa;
+            margin-left: 5px;
         }
         .chat-input {
             display: flex;
@@ -241,6 +294,7 @@
             border: none;
             border-radius: 30px;
             color: white;
+            font-size: 16px;
         }
         .chat-input button {
             background: #D4AF37;
@@ -250,37 +304,14 @@
             border-radius: 50%;
             cursor: pointer;
         }
-        .media-buttons {
-            display: flex;
-            gap: 10px;
-            margin: 10px 0;
-            flex-wrap: wrap;
-        }
-        .media-btn {
-            background: #2a2a2a;
-            border: 1px solid #D4AF37;
-            color: #D4AF37;
-            padding: 10px 15px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .media-btn:hover {
-            background: #D4AF37;
-            color: black;
-        }
-        #remote-video {
-            width: 100%;
-            max-height: 300px;
-            background: #000;
-            border-radius: 10px;
-            margin: 10px 0;
+        .typing-indicator {
+            font-size: 12px;
+            color: #aaa;
+            margin: 5px 0;
+            font-style: italic;
         }
         .hidden {
-            display: none;
+            display: none !important;
         }
         .back-btn {
             background: transparent;
@@ -289,13 +320,6 @@
             padding: 5px 15px;
             border-radius: 20px;
             cursor: pointer;
-        }
-        /* Country flags placeholder (optional) */
-        .country-flag {
-            width: 24px;
-            height: 16px;
-            margin-right: 8px;
-            vertical-align: middle;
         }
     </style>
 </head>
@@ -334,7 +358,13 @@
             <input type="tel" id="patient-phone" placeholder="Namba ya simu (baada ya msimbo wa nchi)">
         </div>
         <button class="btn-call" id="call-doctor-btn" onclick="startPatientSession()">MWITE DAKTARI <i class="fas fa-phone-alt"></i></button>
-        <div id="patient-spinner" style="display: none;" class="spinner"></div>
+        
+        <!-- Calling animation (kwanza imefichwa) -->
+        <div id="calling-animation" style="display: none;" class="ship-spinner">
+            <div class="outer"></div>
+            <div class="inner"></div>
+            <div class="center"></div>
+        </div>
         <div id="patient-status" style="margin-top:15px; color:#D4AF37;"></div>
     </div>
 
@@ -354,28 +384,34 @@
                 <span id="chat-patient-name" style="color:#D4AF37; font-weight:bold;"></span>
                 <span id="chat-patient-phone" style="color:#aaa; font-size:12px; margin-left:10px;"></span>
             </div>
-            <button class="back-btn" onclick="closeChat()">Rudi</button>
+            <div>
+                <button class="back-btn" onclick="closeChat()">Rudi</button>
+            </div>
         </div>
 
-        <!-- Video remote (kwa ajili ya daktari) -->
-        <video id="remote-video" autoplay playsinline class="hidden"></video>
-        <audio id="remote-audio" autoplay></audio>
-
-        <div class="media-buttons">
+        <!-- Media buttons – ZINAONEKANA KWA DAKTARI TU -->
+        <div id="doctor-media-controls" class="media-buttons hidden">
             <button class="media-btn" onclick="requestCamera()"><i class="fas fa-camera"></i> Kamera</button>
             <button class="media-btn" onclick="requestMic()"><i class="fas fa-microphone"></i> Sikiliza</button>
             <button class="media-btn" onclick="startAudioCall()"><i class="fas fa-phone"></i> Simu</button>
-            <button class="media-btn" onclick="sendFile()"><i class="fas fa-file"></i> Faili</button>
+            <button class="media-btn" onclick="blockPatient()"><i class="fas fa-ban"></i> Zuia</button>
+            <button class="media-btn" onclick="mutePatient()"><i class="fas fa-clock"></i> Simamisha (dakika 5)</button>
         </div>
 
-        <div class="chat-messages" id="chat-messages"></div>
+        <div id="patient-chat-only" style="flex:1; display: flex; flex-direction: column;">
+            <div class="typing-indicator" id="typing-indicator" style="display: none;"></div>
+            <div class="chat-messages" id="chat-messages"></div>
+        </div>
+
         <div class="chat-input">
-            <input type="text" id="chat-input" placeholder="Andika ujumbe...">
+            <input type="text" id="chat-input" placeholder="Andika ujumbe..." onkeyup="userTyping()">
             <button onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
 
-    <!-- Firebase Config (SAHIHI) -->
+    <!-- Sauti ya kumshtua daktari -->
+    <audio id="alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3" preload="auto"></audio>
+
     <script>
         // 🔥 CONFIG YAKO HALISI YA FIREBASE 🔥
         const firebaseConfig = {
@@ -398,13 +434,8 @@
         let currentPatientName = '';
         let currentPatientPhone = '';
         let currentCountryCode = '+255';
-        let doctorOnlineRef = null;
-        let patientOnlineRef = null;
-        let peerConnection = null;
-        let localStream = null;
-        let remoteStream = null;
-        let pendingCandidates = [];
-        const servers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+        let typingTimeout = null;
+        let messageListeners = [];
 
         // ==================== DOCTOR SECRET LOGIN ====================
         function showDoctorLogin() {
@@ -450,34 +481,56 @@
             currentPatientPhone = fullPhone;
             currentPatientId = fullPhone.replace(/\+/g, ''); // simu kama ID
 
-            // Save to Firebase
-            db.ref('patients/' + currentPatientId).set({
-                name: name,
-                phone: fullPhone,
-                country: country,
-                lastSeen: Date.now(),
-                online: true
-            });
-            db.ref('patients/' + currentPatientId).onDisconnect().update({ online: false });
-
-            // Hide form, show spinner
-            document.getElementById('patient-container').style.display = 'none';
-            document.getElementById('patient-spinner').style.display = 'block';
-            document.getElementById('patient-status').innerText = 'Kumtafuta daktari...';
-
-            // Listen for doctor online status
-            db.ref('doctor/online').on('value', (snap) => {
-                if (snap.val() === true) {
-                    // Doctor online, initiate connection
-                    document.getElementById('patient-spinner').style.display = 'none';
-                    document.getElementById('patient-status').innerText = 'Daktari amepatikana!';
-                    setTimeout(() => {
-                        // Open chat for patient
-                        openPatientChat(currentPatientId, name, fullPhone);
-                    }, 1000);
-                } else {
-                    document.getElementById('patient-status').innerText = 'Daktari hayupo kwa sasa...';
+            // Check if patient is blocked
+            db.ref('blocks/' + currentPatientId).once('value', (snap) => {
+                const blockData = snap.val();
+                if (blockData && blockData.blocked) {
+                    if (blockData.expires > Date.now()) {
+                        alert('Umezuiwa kwa muda. Tafadhali jaribu tena baadaye.');
+                        return;
+                    } else {
+                        // Block expired, remove it
+                        db.ref('blocks/' + currentPatientId).remove();
+                    }
                 }
+
+                // Save to Firebase
+                db.ref('patients/' + currentPatientId).set({
+                    name: name,
+                    phone: fullPhone,
+                    country: country,
+                    lastSeen: Date.now(),
+                    online: true
+                });
+                db.ref('patients/' + currentPatientId).onDisconnect().update({ online: false });
+
+                // Hide form, show calling animation
+                document.getElementById('call-doctor-btn').style.display = 'none';
+                document.getElementById('calling-animation').style.display = 'block';
+                document.getElementById('patient-status').innerText = 'Kumtafuta daktari...';
+
+                // Check doctor status after 5 seconds
+                setTimeout(() => {
+                    db.ref('doctor/online').once('value', (snap) => {
+                        if (snap.val() === true) {
+                            document.getElementById('patient-status').innerText = 'Daktari yuko online, subiria anaingia...';
+                            // Doctor will open chat manually
+                        } else {
+                            document.getElementById('calling-animation').style.display = 'none';
+                            document.getElementById('call-doctor-btn').style.display = 'block';
+                            document.getElementById('patient-status').innerText = 'Daktari hayupo kwa sasa. Jaribu tena baadaye.';
+                        }
+                    });
+                }, 5000);
+
+                // Listen for doctor opening chat
+                db.ref('chats/' + currentPatientId + '/open').on('value', (snap) => {
+                    if (snap.val() === true && currentUserRole === 'patient') {
+                        document.getElementById('calling-animation').style.display = 'none';
+                        document.getElementById('patient-status').innerText = '';
+                        openPatientChat(currentPatientId, name, fullPhone);
+                    }
+                });
             });
         }
 
@@ -488,14 +541,24 @@
             document.getElementById('chat-area').style.display = 'flex';
             document.getElementById('chat-patient-name').innerText = patientName;
             document.getElementById('chat-patient-phone').innerText = patientPhone;
+            
+            // Hide doctor media controls for patient
+            document.getElementById('doctor-media-controls').classList.add('hidden');
+            
             loadMessages(roomId);
-
-            // Listen for doctor's requests (camera, mic, call)
-            listenForDoctorRequests(roomId);
+            listenForTyping(roomId);
         }
 
         // ==================== DOCTOR DASHBOARD ====================
         function loadPatients() {
+            // Listen for new patients and play alert sound
+            db.ref('patients').on('child_added', (snap) => {
+                const p = snap.val();
+                if (currentUserRole === 'doctor') {
+                    document.getElementById('alert-sound').play().catch(() => {});
+                }
+            });
+
             db.ref('patients').on('value', (snap) => {
                 const listDiv = document.getElementById('patient-list');
                 listDiv.innerHTML = '';
@@ -503,15 +566,22 @@
                     const p = child.val();
                     const id = child.key;
                     const online = p.online ? '<span class="online-dot"></span>' : '<span class="offline-dot"></span>';
-                    listDiv.innerHTML += `
-                        <div class="patient-item" onclick="openDoctorChat('${id}', '${p.name}', '${p.phone}')">
-                            <div>
-                                <strong>${p.name}</strong><br>
-                                <small>${p.phone}</small>
+                    
+                    // Check if blocked
+                    db.ref('blocks/' + id).once('value', (blockSnap) => {
+                        const blockData = blockSnap.val();
+                        const isBlocked = blockData && blockData.blocked && blockData.expires > Date.now();
+                        
+                        listDiv.innerHTML += `
+                            <div class="patient-item" onclick="openDoctorChat('${id}', '${p.name}', '${p.phone}')">
+                                <div>
+                                    <strong>${p.name} ${isBlocked ? '(🔒 IMEZUIWA)' : ''}</strong><br>
+                                    <small>${p.phone}</small>
+                                </div>
+                                <div>${online}</div>
                             </div>
-                            <div>${online}</div>
-                        </div>
-                    `;
+                        `;
+                    });
                 });
             });
         }
@@ -524,203 +594,229 @@
             document.getElementById('chat-area').style.display = 'flex';
             document.getElementById('chat-patient-name').innerText = patientName;
             document.getElementById('chat-patient-phone').innerText = patientPhone;
+            
+            // Show doctor media controls
+            document.getElementById('doctor-media-controls').classList.remove('hidden');
+            
+            // Mark chat as open for patient
+            db.ref('chats/' + patientId + '/open').set(true);
+            
             loadMessages(patientId);
+            listenForTyping(patientId);
         }
 
         function closeChat() {
             if (currentUserRole === 'doctor') {
+                // Close chat for patient
+                db.ref('chats/' + currentPatientId + '/open').set(false);
                 document.getElementById('chat-area').style.display = 'none';
                 document.getElementById('doctor-dashboard').style.display = 'block';
             } else {
                 document.getElementById('chat-area').style.display = 'none';
                 document.getElementById('patient-container').style.display = 'block';
-                // Disconnect from doctor
-                if (peerConnection) peerConnection.close();
-                peerConnection = null;
+                document.getElementById('call-doctor-btn').style.display = 'block';
+                document.getElementById('calling-animation').style.display = 'none';
             }
+            // Clean up typing listeners
+            if (typingTimeout) clearTimeout(typingTimeout);
         }
 
-        // ==================== CHAT MESSAGES ====================
+        // ==================== CHAT MESSAGES WITH STATUS ====================
         function loadMessages(roomId) {
             const msgDiv = document.getElementById('chat-messages');
             msgDiv.innerHTML = '';
-            db.ref('messages/' + roomId).off();
-            db.ref('messages/' + roomId).on('child_added', (snap) => {
+            if (messageListeners[roomId]) {
+                db.ref('messages/' + roomId).off('child_added', messageListeners[roomId]);
+            }
+            
+            const callback = (snap) => {
                 const msg = snap.val();
+                const msgId = snap.key;
                 const isMe = (currentUserRole === 'doctor' && msg.sender === 'doctor') ||
                              (currentUserRole === 'patient' && msg.sender === 'patient');
+                
+                // Mark message as delivered for the receiver
+                if ((currentUserRole === 'doctor' && msg.sender === 'patient') ||
+                    (currentUserRole === 'patient' && msg.sender === 'doctor')) {
+                    db.ref('messages/' + roomId + '/' + msgId + '/status').update({ delivered: true });
+                }
+                
                 const div = document.createElement('div');
                 div.className = `message ${isMe ? 'sent' : 'received'}`;
-                div.innerText = msg.text;
+                
+                let statusHtml = '';
+                if (isMe) {
+                    let status = '✓'; // sent
+                    if (msg.status) {
+                        if (msg.status.delivered) status = '✓✓';
+                        if (msg.status.seen) status = '✓✓✓';
+                    }
+                    statusHtml = `<span class="message-status">${status}</span>`;
+                }
+                
+                div.innerHTML = msg.text + statusHtml;
                 msgDiv.appendChild(div);
                 msgDiv.scrollTop = msgDiv.scrollHeight;
-            });
+            };
+            
+            db.ref('messages/' + roomId).on('child_added', callback);
+            messageListeners[roomId] = callback;
         }
 
         function sendMessage() {
             const input = document.getElementById('chat-input');
             if (!input.value.trim()) return;
-            const sender = currentUserRole === 'doctor' ? 'doctor' : 'patient';
-            db.ref('messages/' + currentPatientId).push({
-                sender: sender,
-                text: input.value.trim(),
-                timestamp: Date.now()
-            });
-            input.value = '';
+            
+            // Check if blocked
+            if (currentUserRole === 'patient') {
+                db.ref('blocks/' + currentPatientId).once('value', (snap) => {
+                    const blockData = snap.val();
+                    if (blockData && blockData.blocked && blockData.expires > Date.now()) {
+                        alert('Huwezi kutuma ujumbe kwa sasa. Umezuiwa kwa muda.');
+                        return;
+                    } else {
+                        proceedSendMessage();
+                    }
+                });
+            } else {
+                proceedSendMessage();
+            }
         }
 
-        // ==================== MEDIA REQUESTS (Doctor -> Patient) ====================
+        function proceedSendMessage() {
+            const input = document.getElementById('chat-input');
+            const sender = currentUserRole === 'doctor' ? 'doctor' : 'patient';
+            const messageRef = db.ref('messages/' + currentPatientId).push({
+                sender: sender,
+                text: input.value.trim(),
+                timestamp: Date.now(),
+                status: { delivered: false, seen: false }
+            });
+            
+            // Mark as seen immediately for sender
+            if (currentUserRole === 'doctor') {
+                messageRef.update({ 'status/seen': true });
+            }
+            
+            input.value = '';
+            
+            // Stop typing indicator
+            if (currentUserRole === 'patient') {
+                db.ref('typing/' + currentPatientId + '/patient').set(false);
+            } else {
+                db.ref('typing/' + currentPatientId + '/doctor').set(false);
+            }
+        }
+
+        // ==================== TYPING INDICATOR ====================
+        function userTyping() {
+            if (!currentPatientId) return;
+            
+            if (currentUserRole === 'patient') {
+                db.ref('typing/' + currentPatientId + '/patient').set(true);
+                if (typingTimeout) clearTimeout(typingTimeout);
+                typingTimeout = setTimeout(() => {
+                    db.ref('typing/' + currentPatientId + '/patient').set(false);
+                }, 2000);
+            } else if (currentUserRole === 'doctor') {
+                db.ref('typing/' + currentPatientId + '/doctor').set(true);
+                if (typingTimeout) clearTimeout(typingTimeout);
+                typingTimeout = setTimeout(() => {
+                    db.ref('typing/' + currentPatientId + '/doctor').set(false);
+                }, 2000);
+            }
+        }
+
+        function listenForTyping(roomId) {
+            const typingDiv = document.getElementById('typing-indicator');
+            db.ref('typing/' + roomId).on('value', (snap) => {
+                const typing = snap.val();
+                if (!typing) {
+                    typingDiv.style.display = 'none';
+                    return;
+                }
+                
+                if (currentUserRole === 'doctor' && typing.patient) {
+                    typingDiv.style.display = 'block';
+                    typingDiv.innerText = 'Mgonjwa anaandika...';
+                } else if (currentUserRole === 'patient' && typing.doctor) {
+                    typingDiv.style.display = 'block';
+                    typingDiv.innerText = 'Daktari anaandika...';
+                } else {
+                    typingDiv.style.display = 'none';
+                }
+            });
+        }
+
+        // ==================== DOCTOR CONTROLS ====================
+        function blockPatient() {
+            if (!currentPatientId || currentUserRole !== 'doctor') return;
+            
+            const expires = Date.now() + (24 * 60 * 60 * 1000); // block for 24 hours
+            db.ref('blocks/' + currentPatientId).set({
+                blocked: true,
+                expires: expires,
+                reason: 'Blocked by doctor'
+            });
+            alert('Mgonjwa amezuiwa kwa saa 24');
+        }
+
+        function mutePatient() {
+            if (!currentPatientId || currentUserRole !== 'doctor') return;
+            
+            const expires = Date.now() + (5 * 60 * 1000); // 5 minutes
+            db.ref('blocks/' + currentPatientId).set({
+                blocked: true,
+                expires: expires,
+                reason: 'Muted for 5 minutes'
+            });
+            alert('Mgonjwa amesimamishwa kwa dakika 5');
+        }
+
+        // Media requests (doctor only)
         function requestCamera() {
             if (!currentPatientId) return;
             db.ref('requests/' + currentPatientId + '/camera').set(true);
+            alert('Ombi la kamera limetumwa kwa mgonjwa');
         }
 
         function requestMic() {
             if (!currentPatientId) return;
             db.ref('requests/' + currentPatientId + '/mic').set(true);
+            alert('Ombi la kusikiliza limetumwa');
         }
 
         function startAudioCall() {
             if (!currentPatientId) return;
             db.ref('requests/' + currentPatientId + '/call').set(true);
+            alert('Ombi la simu limetumwa');
         }
 
-        function sendFile() {
-            // Simulate file upload
-            alert('Huduma ya kutuma faili itaongezwa baadaye.');
-        }
-
-        // ==================== PATIENT LISTENS FOR REQUESTS ====================
+        // Patient listens for requests (but has no UI for them)
         function listenForDoctorRequests(patientId) {
             const reqRef = db.ref('requests/' + patientId);
             reqRef.on('value', async (snap) => {
                 const req = snap.val();
                 if (!req) return;
-                // Kamera
+                
                 if (req.camera === true) {
-                    reqRef.child('camera').remove(); // ondoa baada ya kusoma
-                    try {
-                        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-                        // Anzisha peer connection na tuma offer kwa daktari
-                        createPeerConnection(true, 'video');
-                    } catch (e) {
-                        alert('Kamera haipatikani');
-                    }
+                    reqRef.child('camera').remove();
+                    alert('Daktari anaomba kufungua kamera yako');
+                    // In real implementation, you would handle WebRTC here
                 }
-                // Maikrofoni
                 if (req.mic === true) {
                     reqRef.child('mic').remove();
-                    try {
-                        localStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
-                        createPeerConnection(true, 'audio');
-                    } catch (e) {
-                        alert('Maikrofoni haipatikani');
-                    }
+                    alert('Daktari anaomba kusikiliza');
                 }
-                // Simu (audio+video)
                 if (req.call === true) {
                     reqRef.child('call').remove();
-                    try {
-                        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                        createPeerConnection(true, 'call');
-                    } catch (e) {
-                        alert('Kamera/maikrofoni haipatikani');
-                    }
+                    alert('Daktari anakupigia simu');
                 }
             });
         }
 
-        // ==================== WEBRTC PEER CONNECTION ====================
-        async function createPeerConnection(isInitiator, type) {
-            if (peerConnection) peerConnection.close();
-            peerConnection = new RTCPeerConnection(servers);
-
-            // Ongeza local tracks
-            if (localStream) {
-                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-            }
-
-            // Remote stream
-            remoteStream = new MediaStream();
-            const remoteVideo = document.getElementById('remote-video');
-            if (remoteVideo) remoteVideo.srcObject = remoteStream;
-
-            peerConnection.ontrack = (event) => {
-                event.streams[0].getTracks().forEach(track => remoteStream.addTrack(track));
-                // Show video element if video track
-                if (event.track.kind === 'video') {
-                    document.getElementById('remote-video').classList.remove('hidden');
-                }
-            };
-
-            // ICE candidates
-            peerConnection.onicecandidate = (event) => {
-                if (event.candidate) {
-                    db.ref('webrtc/' + currentPatientId + '/candidates').push(event.candidate.toJSON());
-                }
-            };
-
-            // Kama ni initiator (patient), tengeneza offer
-            if (isInitiator) {
-                const offer = await peerConnection.createOffer();
-                await peerConnection.setLocalDescription(offer);
-                db.ref('webrtc/' + currentPatientId + '/offer').set(offer);
-            }
-
-            // Sikiliza answer (kama daktari)
-            if (currentUserRole === 'doctor') {
-                db.ref('webrtc/' + currentPatientId + '/offer').on('value', async (snap) => {
-                    const offer = snap.val();
-                    if (offer && !peerConnection) {
-                        peerConnection = new RTCPeerConnection(servers);
-                        // Setup peer connection for doctor
-                        peerConnection.ontrack = (event) => {
-                            event.streams[0].getTracks().forEach(track => remoteStream.addTrack(track));
-                            document.getElementById('remote-video').classList.remove('hidden');
-                        };
-                        peerConnection.onicecandidate = (event) => {
-                            if (event.candidate) {
-                                db.ref('webrtc/' + currentPatientId + '/candidates').push(event.candidate.toJSON());
-                            }
-                        };
-                        await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-                        const answer = await peerConnection.createAnswer();
-                        await peerConnection.setLocalDescription(answer);
-                        db.ref('webrtc/' + currentPatientId + '/answer').set(answer);
-                    }
-                });
-
-                db.ref('webrtc/' + currentPatientId + '/candidates').on('child_added', (snap) => {
-                    const candidate = snap.val();
-                    if (peerConnection) {
-                        peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-                    } else {
-                        pendingCandidates.push(candidate);
-                    }
-                });
-            }
-
-            // Kama ni mgonjwa, sikiliza answer na candidates
-            if (currentUserRole === 'patient') {
-                db.ref('webrtc/' + currentPatientId + '/answer').on('value', async (snap) => {
-                    const answer = snap.val();
-                    if (answer && peerConnection) {
-                        await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-                        // Ongeza candidates zilizokusanywa
-                        pendingCandidates.forEach(c => peerConnection.addIceCandidate(new RTCIceCandidate(c)));
-                        pendingCandidates = [];
-                    }
-                });
-                db.ref('webrtc/' + currentPatientId + '/candidates').on('child_added', (snap) => {
-                    const candidate = snap.val();
-                    if (peerConnection && peerConnection.remoteDescription) {
-                        peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-                    } else {
-                        pendingCandidates.push(candidate);
-                    }
-                });
-            }
-        }
+        // Initialize request listener for patient when they open chat
+        window.listenForDoctorRequests = listenForDoctorRequests;
     </script>
 </body>
 </html>
